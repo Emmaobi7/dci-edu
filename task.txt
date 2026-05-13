@@ -1,0 +1,8 @@
+primary color of the ui: #C66726
+secondar color: white
+app must be beautiful responsive and feel like glass and have amazing ui/ux
+
+Week 4
+
+Announcements / feed
+Teacher posts updates to a class · students see them on the class page

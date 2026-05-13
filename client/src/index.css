@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand primary #C66726 ~ hsl(22, 67%, 47%) */
+    --background: 30 40% 98%;
+    --foreground: 24 35% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 24 35% 12%;
+
+    --primary: 22 67% 47%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 100%;
+    --secondary-foreground: 24 35% 12%;
+
+    --muted: 30 25% 94%;
+    --muted-foreground: 24 10% 40%;
+
+    --accent: 22 90% 95%;
+    --accent-foreground: 22 67% 30%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 24 20% 88%;
+    --input: 24 20% 88%;
+    --ring: 22 67% 47%;
+
+    --radius: 0.875rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    @apply text-foreground antialiased;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(198, 103, 38, 0.22), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(255, 200, 150, 0.30), transparent 60%),
+      linear-gradient(180deg, #FFF7F0 0%, #FFFFFF 60%, #FFF1E5 100%);
+    background-attachment: fixed;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/55 backdrop-blur-xl backdrop-saturate-150 border border-white/60 shadow-glass;
+  }
+  .glass-strong {
+    @apply bg-white/75 backdrop-blur-2xl backdrop-saturate-150 border border-white/70 shadow-glass-lg;
+  }
+  .glass-panel {
+    @apply glass rounded-2xl;
+  }
+  .glass-input {
+    @apply bg-white/80 backdrop-blur-md border border-foreground/15 shadow-inner shadow-black/[0.02]
+           hover:border-foreground/25
+           focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30 focus-visible:bg-white
+           transition-colors;
+  }
+}

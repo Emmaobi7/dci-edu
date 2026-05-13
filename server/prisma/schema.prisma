@@ -1,0 +1,212 @@
+// Prisma schema for the LMS
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(STUDENT)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ownedClassrooms   Classroom[]  @relation("ClassroomTeacher")
+  enrolments        Enrolment[]
+  createdAssignments Assignment[] @relation("AssignmentAuthor")
+  submissions       Submission[]
+  gradedSubmissions Submission[] @relation("SubmissionGrader")
+  announcements     Announcement[] @relation("AnnouncementAuthor")
+  comments          AnnouncementComment[] @relation("AnnouncementCommentAuthor")
+  notifications     Notification[] @relation("NotificationRecipient")
+
+  @@index([role])
+}
+
+model Classroom {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  code        String   @unique
+  teacherId   String
+  teacher     User     @relation("ClassroomTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  enrolments  Enrolment[]
+  assignments Assignment[]
+  announcements Announcement[]
+  notifications Notification[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([teacherId])
+}
+
+model Enrolment {
+  id          String   @id @default(cuid())
+  classroomId String
+  studentId   String
+  joinedAt    DateTime @default(now())
+
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  student   User      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classroomId, studentId])
+  @@index([studentId])
+}
+
+
+model Assignment {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  dueDate     DateTime?
+  classroomId String
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  classroom   Classroom             @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  createdBy   User                  @relation("AssignmentAuthor", fields: [createdById], references: [id], onDelete: Cascade)
+  attachments AssignmentAttachment[]
+  submissions Submission[]
+  notifications Notification[]
+
+  @@index([classroomId])
+  @@index([createdById])
+}
+
+model AssignmentAttachment {
+  id            String     @id @default(cuid())
+  assignmentId  String
+  filename      String
+  storedName    String
+  mimetype      String
+  size          Int
+  createdAt     DateTime   @default(now())
+
+  assignment    Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([assignmentId])
+}
+
+model Submission {
+  id           String   @id @default(cuid())
+  assignmentId String
+  studentId    String
+  filename     String
+  storedName   String
+  mimetype     String
+  size         Int
+  isLate       Boolean  @default(false)
+  grade        Int?
+  feedback     String?
+  gradedAt     DateTime?
+  gradedById   String?
+  submittedAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student    User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  gradedBy   User?      @relation("SubmissionGrader", fields: [gradedById], references: [id], onDelete: SetNull)
+
+  @@unique([assignmentId, studentId])
+  @@index([studentId])
+}
+
+enum AttachmentKind {
+  IMAGE
+  YOUTUBE
+}
+
+enum NotificationType {
+  ANNOUNCEMENT_NEW
+  ASSIGNMENT_NEW
+}
+
+model Announcement {
+  id          String   @id @default(cuid())
+  classroomId String
+  authorId    String
+  body        String
+  isPinned    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  classroom   Classroom                @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  author      User                     @relation("AnnouncementAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  attachments AnnouncementAttachment[]
+  comments    AnnouncementComment[]
+  notifications Notification[]
+
+  @@index([classroomId])
+  @@index([authorId])
+}
+
+model AnnouncementAttachment {
+  id             String         @id @default(cuid())
+  announcementId String
+  kind           AttachmentKind
+
+  // For IMAGE
+  filename       String?
+  storedName     String?
+  mimetype       String?
+  size           Int?
+
+  // For YOUTUBE
+  youtubeId      String?
+  youtubeUrl     String?
+
+  createdAt      DateTime       @default(now())
+
+  announcement   Announcement   @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@index([announcementId])
+}
+
+model AnnouncementComment {
+  id             String       @id @default(cuid())
+  announcementId String
+  authorId       String
+  body           String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  author         User         @relation("AnnouncementCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([announcementId])
+  @@index([authorId])
+}
+
+model Notification {
+  id             String           @id @default(cuid())
+  userId         String
+  type           NotificationType
+  classroomId    String?
+  announcementId String?
+  assignmentId   String?
+  title          String
+  body           String?
+  readAt         DateTime?
+  createdAt      DateTime         @default(now())
+
+  user           User             @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  classroom      Classroom?       @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  announcement   Announcement?    @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  assignment     Assignment?      @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
