@@ -6,6 +6,7 @@ import {
   deleteAttachment,
   downloadAttachment,
   getAssignment,
+  listMyUpcoming,
   updateAssignment,
   uploadAttachments,
 } from '../controllers/assignment.controller.js';
@@ -21,6 +22,7 @@ import { attachmentUpload, submissionUpload } from '../utils/uploads.js';
 const router = Router();
 router.use(requireAuth);
 
+router.get('/me/upcoming', asyncHandler(listMyUpcoming));
 router.get('/:id', asyncHandler(getAssignment));
 router.patch('/:id', asyncHandler(updateAssignment));
 router.delete('/:id', asyncHandler(deleteAssignment));

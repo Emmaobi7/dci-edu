@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { prisma } from '../db/prisma.js';
 import { HttpError } from '../utils/HttpError.js';
 import { joinByCodeSchema } from '../schemas/classroom.schema.js';
+import { ensureClassroomMember } from '../utils/classroomAuth.js';
 
 function requireUser(req: Request) {
   if (!req.user) throw new HttpError(401, 'Not authenticated');
@@ -58,12 +59,13 @@ export async function listStudents(req: Request, res: Response): Promise<void> {
   const user = requireUser(req);
   const { id } = req.params as { id: string };
 
+  const { isOwner } = await ensureClassroomMember(user, id);
   const classroom = await prisma.classroom.findUnique({
     where: { id },
-    select: { id: true, teacherId: true },
+    select: { moderatorId: true },
   });
-  if (!classroom) throw new HttpError(404, 'Classroom not found');
-  if (!isOwnerOrAdmin(user, classroom.teacherId)) throw new HttpError(403, 'Forbidden');
+  const moderatorId = classroom?.moderatorId ?? null;
+  const canSeeMute = isOwner || (moderatorId !== null && moderatorId === user.id);
 
   const enrolments = await prisma.enrolment.findMany({
     where: { classroomId: id },
@@ -71,10 +73,19 @@ export async function listStudents(req: Request, res: Response): Promise<void> {
     select: {
       id: true,
       joinedAt: true,
+      mutedAt: true,
       student: { select: { id: true, name: true, email: true } },
     },
   });
-  res.json({ students: enrolments });
+  const students = enrolments.map((e) => ({
+    id: e.id,
+    joinedAt: e.joinedAt,
+    mutedAt: canSeeMute ? e.mutedAt : null,
+    isMuted: e.mutedAt !== null,
+    isModerator: moderatorId !== null && e.student.id === moderatorId,
+    student: e.student,
+  }));
+  res.json({ students, moderatorId });
 }
 
 export async function removeStudent(req: Request, res: Response): Promise<void> {
@@ -83,7 +94,7 @@ export async function removeStudent(req: Request, res: Response): Promise<void> 
 
   const classroom = await prisma.classroom.findUnique({
     where: { id },
-    select: { id: true, teacherId: true },
+    select: { id: true, teacherId: true, moderatorId: true },
   });
   if (!classroom) throw new HttpError(404, 'Classroom not found');
   if (!isOwnerOrAdmin(user, classroom.teacherId)) throw new HttpError(403, 'Forbidden');
@@ -94,6 +105,9 @@ export async function removeStudent(req: Request, res: Response): Promise<void> 
   });
   if (!enrolment) throw new HttpError(404, 'Student is not enrolled');
 
+  if (classroom.moderatorId === studentId) {
+    await prisma.classroom.update({ where: { id }, data: { moderatorId: null } });
+  }
   await prisma.enrolment.delete({ where: { id: enrolment.id } });
   res.status(204).end();
 }

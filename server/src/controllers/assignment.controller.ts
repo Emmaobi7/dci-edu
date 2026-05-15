@@ -65,6 +65,38 @@ export async function createAssignment(req: Request, res: Response): Promise<voi
   res.status(201).json({ assignment });
 }
 
+export async function listMyUpcoming(req: Request, res: Response): Promise<void> {
+  const user = requireUser(req);
+  if (user.role !== 'STUDENT') throw new HttpError(403, 'Students only');
+
+  const limitRaw = Number(req.query.limit ?? 5);
+  const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(20, Math.trunc(limitRaw))) : 5;
+
+  const where = {
+    classroom: { enrolments: { some: { studentId: user.id } } },
+    submissions: { none: { studentId: user.id } },
+  } as const;
+
+  const [items, totalPending] = await Promise.all([
+    prisma.assignment.findMany({
+      where,
+      orderBy: [{ dueDate: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
+      take: limit,
+      select: {
+        id: true,
+        title: true,
+        dueDate: true,
+        classroomId: true,
+        createdAt: true,
+        classroom: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.assignment.count({ where }),
+  ]);
+
+  res.json({ assignments: items, totalPending });
+}
+
 export async function listAssignments(req: Request, res: Response): Promise<void> {
   const user = requireUser(req);
   const { id: classroomId } = req.params as { id: string };

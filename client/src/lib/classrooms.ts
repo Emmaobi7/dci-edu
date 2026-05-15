@@ -33,9 +33,13 @@ export async function regenerateCode(id: string): Promise<Classroom> {
   return data.classroom;
 }
 
-export async function listMembers(id: string): Promise<EnrolmentMember[]> {
-  const { data } = await api.get<{ students: EnrolmentMember[] }>(`/classrooms/${id}/students`);
-  return data.students;
+export async function listMembers(
+  id: string,
+): Promise<{ students: EnrolmentMember[]; moderatorId: string | null }> {
+  const { data } = await api.get<{ students: EnrolmentMember[]; moderatorId: string | null }>(
+    `/classrooms/${id}/students`,
+  );
+  return data;
 }
 
 export async function removeMember(id: string, studentId: string): Promise<void> {

@@ -24,6 +24,7 @@ model User {
   updatedAt    DateTime @updatedAt
 
   ownedClassrooms   Classroom[]  @relation("ClassroomTeacher")
+  moderatedClassrooms Classroom[] @relation("ClassroomModerator")
   enrolments        Enrolment[]
   createdAssignments Assignment[] @relation("AssignmentAuthor")
   submissions       Submission[]
@@ -31,6 +32,10 @@ model User {
   announcements     Announcement[] @relation("AnnouncementAuthor")
   comments          AnnouncementComment[] @relation("AnnouncementCommentAuthor")
   notifications     Notification[] @relation("NotificationRecipient")
+  createdQuizzes    Quiz[]                @relation("QuizAuthor")
+  quizAttempts      QuizAttempt[]
+  sentMessages      Message[]             @relation("MessageSender")
+  deletedMessages   Message[]             @relation("MessageDeleter")
 
   @@index([role])
 }
@@ -42,20 +47,26 @@ model Classroom {
   code        String   @unique
   teacherId   String
   teacher     User     @relation("ClassroomTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  moderatorId String?
+  moderator   User?    @relation("ClassroomModerator", fields: [moderatorId], references: [id], onDelete: SetNull)
   enrolments  Enrolment[]
   assignments Assignment[]
   announcements Announcement[]
   notifications Notification[]
+  quizzes     Quiz[]
+  messages    Message[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([teacherId])
+  @@index([moderatorId])
 }
 
 model Enrolment {
   id          String   @id @default(cuid())
   classroomId String
   studentId   String
+  mutedAt     DateTime?
   joinedAt    DateTime @default(now())
 
   classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
@@ -63,6 +74,23 @@ model Enrolment {
 
   @@unique([classroomId, studentId])
   @@index([studentId])
+}
+
+model Message {
+  id           String    @id @default(cuid())
+  classroomId  String
+  senderId     String
+  body         String
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
+  deletedById  String?
+
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  sender    User      @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  deletedBy User?     @relation("MessageDeleter", fields: [deletedById], references: [id], onDelete: SetNull)
+
+  @@index([classroomId, createdAt])
+  @@index([senderId])
 }
 
 
@@ -132,6 +160,8 @@ enum AttachmentKind {
 enum NotificationType {
   ANNOUNCEMENT_NEW
   ASSIGNMENT_NEW
+  COMMENT_NEW
+  QUIZ_NEW
 }
 
 model Announcement {
@@ -197,6 +227,7 @@ model Notification {
   classroomId    String?
   announcementId String?
   assignmentId   String?
+  quizId         String?
   title          String
   body           String?
   readAt         DateTime?
@@ -206,7 +237,53 @@ model Notification {
   classroom      Classroom?       @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   announcement   Announcement?    @relation(fields: [announcementId], references: [id], onDelete: Cascade)
   assignment     Assignment?      @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  quiz           Quiz?            @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt])
   @@index([userId, createdAt])
+}
+
+model Quiz {
+  id               String   @id @default(cuid())
+  classroomId      String
+  createdById      String
+  title            String
+  description      String?
+  timeLimitMinutes Int?
+  dueDate          DateTime?
+  shuffleQuestions Boolean  @default(false)
+  shuffleOptions   Boolean  @default(true)
+  showAnswers      Boolean  @default(true)
+  questions        Json
+  totalPoints      Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  classroom        Classroom     @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  createdBy        User          @relation("QuizAuthor", fields: [createdById], references: [id], onDelete: Cascade)
+  attempts         QuizAttempt[]
+  notifications    Notification[]
+
+  @@index([classroomId])
+  @@index([createdById])
+}
+
+model QuizAttempt {
+  id            String    @id @default(cuid())
+  quizId        String
+  studentId     String
+  startedAt     DateTime  @default(now())
+  submittedAt   DateTime?
+  isLate        Boolean   @default(false)
+  questionOrder Json
+  optionOrders  Json
+  answers       Json
+  score         Int?
+  totalPoints   Int
+
+  quiz    Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, studentId])
+  @@index([studentId])
 }

@@ -9,6 +9,9 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { ClassesPage } from '@/pages/ClassesPage';
 import { ClassroomDetailPage } from '@/pages/ClassroomDetailPage';
 import { AssignmentDetailPage } from '@/pages/AssignmentDetailPage';
+import { NotificationsPage } from '@/pages/NotificationsPage';
+import { QuizDetailPage } from '@/pages/QuizDetailPage';
+import { TeacherAttemptPage } from '@/pages/TeacherAttemptPage';
 
 export default function App() {
   return (
@@ -26,6 +29,9 @@ export default function App() {
               <Route path="/classes" element={<ClassesPage />} />
               <Route path="/classes/:id" element={<ClassroomDetailPage />} />
               <Route path="/classes/:classId/assignments/:id" element={<AssignmentDetailPage />} />
+              <Route path="/classes/:classId/quizzes/:id" element={<QuizDetailPage />} />
+              <Route path="/classes/:classId/quizzes/:id/attempts/:attemptId" element={<TeacherAttemptPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
             </Route>
           </Route>
 

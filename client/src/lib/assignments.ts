@@ -1,11 +1,23 @@
 import { api } from './api';
 import type {
-  Assignment, AssignmentAttachment, AssignmentDetail, Submission,
+  Assignment, AssignmentAttachment, AssignmentDetail, Submission, UpcomingAssignment,
 } from './types';
 
 export async function listAssignments(classroomId: string): Promise<Assignment[]> {
   const { data } = await api.get<{ assignments: Assignment[] }>(`/classrooms/${classroomId}/assignments`);
   return data.assignments;
+}
+
+export interface UpcomingAssignmentsResult {
+  assignments: UpcomingAssignment[];
+  totalPending: number;
+}
+
+export async function listMyUpcomingAssignments(limit = 5): Promise<UpcomingAssignmentsResult> {
+  const { data } = await api.get<UpcomingAssignmentsResult>('/assignments/me/upcoming', {
+    params: { limit },
+  });
+  return data;
 }
 
 export async function getAssignment(id: string): Promise<AssignmentDetail> {

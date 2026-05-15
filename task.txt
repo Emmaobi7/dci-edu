@@ -2,7 +2,15 @@ primary color of the ui: #C66726
 secondar color: white
 app must be beautiful responsive and feel like glass and have amazing ui/ux
 
-Week 4
 
-Announcements / feed
-Teacher posts updates to a class · students see them on the class page
+
+Build last
+Real-time chat / messaging
+week 6
+What to build
+Per-class chat room · all enrolled users can message · messages persist in DB · online indicator (optional) · teacher can mute students
+Tips
+Use Socket.io — straightforward with Express · join a socket room per classId · save messages to DB on server · load last 50 messages on mount
+socket.io + socket.io-client
+Message model (classId, senderId, text, timestamp)
+Room = classId, emit to room only

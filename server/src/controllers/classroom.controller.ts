@@ -13,6 +13,7 @@ const classroomPublicSelect = {
   description: true,
   code: true,
   teacherId: true,
+  moderatorId: true,
   createdAt: true,
   updatedAt: true,
   teacher: { select: { id: true, name: true, email: true } },

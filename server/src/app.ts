@@ -8,6 +8,9 @@ import enrolmentRoutes from './routes/enrolment.routes.js';
 import assignmentRoutes from './routes/assignment.routes.js';
 import announcementRoutes from './routes/announcement.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
+import quizRoutes from './routes/quiz.routes.js';
+import meRoutes from './routes/me.routes.js';
+import messageRoutes from './routes/message.routes.js';
 import { errorHandler, notFound } from './middleware/error.js';
 
 export function createApp() {
@@ -32,6 +35,9 @@ export function createApp() {
   app.use('/api/assignments', assignmentRoutes);
   app.use('/api/announcements', announcementRoutes);
   app.use('/api/notifications', notificationRoutes);
+  app.use('/api/quizzes', quizRoutes);
+  app.use('/api/me', meRoutes);
+  app.use('/api/messages', messageRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

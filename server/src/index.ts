@@ -1,9 +1,13 @@
+import http from 'http';
 import { createApp } from './app.js';
 import { env } from './config/env.js';
+import { initSocket } from './socket/io.js';
 
 const app = createApp();
+const server = http.createServer(app);
+initSocket(server);
 
-const server = app.listen(env.PORT, () => {
+server.listen(env.PORT, () => {
   // eslint-disable-next-line no-console
   console.log(`[server] listening on http://localhost:${env.PORT}`);
 });

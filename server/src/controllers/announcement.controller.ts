@@ -96,12 +96,21 @@ export async function listAnnouncements(req: Request, res: Response): Promise<vo
   const user = requireUser(req);
   const { id: classroomId } = req.params as { id: string };
   await ensureClassroomMember(user, classroomId);
-  const announcements = await prisma.announcement.findMany({
+
+  const takeRaw = Number(req.query.take ?? 10);
+  const take = Number.isFinite(takeRaw) ? Math.max(1, Math.min(50, Math.trunc(takeRaw))) : 10;
+  const skipRaw = Number(req.query.skip ?? 0);
+  const skip = Number.isFinite(skipRaw) ? Math.max(0, Math.trunc(skipRaw)) : 0;
+
+  const items = await prisma.announcement.findMany({
     where: { classroomId },
     orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
+    take: take + 1,
+    skip,
     select: announcementSelect,
   });
-  res.json({ announcements });
+  const hasMore = items.length > take;
+  res.json({ announcements: items.slice(0, take), hasMore });
 }
 
 export async function getAnnouncement(req: Request, res: Response): Promise<void> {

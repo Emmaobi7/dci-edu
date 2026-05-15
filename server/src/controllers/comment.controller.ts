@@ -3,6 +3,7 @@ import { prisma } from '../db/prisma.js';
 import { HttpError } from '../utils/HttpError.js';
 import { ensureClassroomMember, isOwnerOrAdmin } from '../utils/classroomAuth.js';
 import { commentSchema } from '../schemas/announcement.schema.js';
+import { notifyCommentParticipants, truncatePreview } from '../utils/notifications.js';
 
 function requireUser(req: Request) {
   if (!req.user) throw new HttpError(401, 'Not authenticated');
@@ -32,6 +33,13 @@ export async function createComment(req: Request, res: Response): Promise<void> 
   const comment = await prisma.announcementComment.create({
     data: { announcementId, authorId: user.id, body: data.body },
     select: commentSelect,
+  });
+  await notifyCommentParticipants({
+    announcementId,
+    classroomId: announcement.classroomId,
+    actorId: user.id,
+    title: `${comment.author.name} commented`,
+    body: truncatePreview(comment.body),
   });
   res.status(201).json({ comment });
 }

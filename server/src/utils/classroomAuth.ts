@@ -38,3 +38,44 @@ export async function ensureClassroomOwner(
   if (!isOwnerOrAdmin(user, classroom.teacherId)) throw new HttpError(403, 'Forbidden');
   return { teacherId: classroom.teacherId };
 }
+
+export interface ChatRoleContext {
+  teacherId: string;
+  moderatorId: string | null;
+  isOwner: boolean;
+  isModerator: boolean;
+  isMuted: boolean;
+}
+
+export async function loadChatRole(
+  user: AuthedUser,
+  classroomId: string,
+): Promise<ChatRoleContext> {
+  const classroom = await prisma.classroom.findUnique({
+    where: { id: classroomId },
+    select: { id: true, teacherId: true, moderatorId: true },
+  });
+  if (!classroom) throw new HttpError(404, 'Classroom not found');
+  const isOwner = isOwnerOrAdmin(user, classroom.teacherId);
+  if (isOwner) {
+    return {
+      teacherId: classroom.teacherId,
+      moderatorId: classroom.moderatorId,
+      isOwner: true,
+      isModerator: false,
+      isMuted: false,
+    };
+  }
+  const enrolment = await prisma.enrolment.findUnique({
+    where: { classroomId_studentId: { classroomId, studentId: user.id } },
+    select: { id: true, mutedAt: true },
+  });
+  if (!enrolment) throw new HttpError(403, 'Not a member of this classroom');
+  return {
+    teacherId: classroom.teacherId,
+    moderatorId: classroom.moderatorId,
+    isOwner: false,
+    isModerator: classroom.moderatorId === user.id,
+    isMuted: enrolment.mutedAt !== null,
+  };
+}

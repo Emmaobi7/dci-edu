@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   ArrowLeft, BookOpen, Check, Copy, GraduationCap, LogOut, Pencil,
-  RefreshCw, Trash2, UserMinus, Users,
+  RefreshCw, Shield, ShieldOff, Trash2, UserMinus, Users, Volume2, VolumeX,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -16,10 +16,18 @@ import {
   deleteClassroom, getClassroom, leaveClassroom, listMembers,
   regenerateCode, removeMember, updateClassroom,
 } from '@/lib/classrooms';
+import {
+  demoteModerator, muteStudent, promoteModerator, unmuteStudent,
+} from '@/lib/messages';
 import type { ClassroomDetail, EnrolmentMember } from '@/lib/types';
 import { AssignmentsTab } from '@/components/AssignmentsTab';
+import { QuizzesTab } from '@/components/QuizzesTab';
+import { StreamTab } from '@/components/StreamTab';
+import { InsightsTab } from '@/components/InsightsTab';
+import { ChatTab } from '@/components/ChatTab';
+import { ChatRolePill } from '@/components/ChatRoleBadge';
 
-type TabKey = 'overview' | 'assignments' | 'members';
+type TabKey = 'stream' | 'overview' | 'assignments' | 'quizzes' | 'chat' | 'members' | 'insights';
 
 export function ClassroomDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
@@ -29,7 +37,7 @@ export function ClassroomDetailPage() {
   const [classroom, setClassroom] = useState<ClassroomDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<TabKey>('overview');
+  const [tab, setTab] = useState<TabKey>('stream');
 
   const [members, setMembers] = useState<EnrolmentMember[] | null>(null);
   const [membersLoading, setMembersLoading] = useState(false);
@@ -43,6 +51,8 @@ export function ClassroomDetailPage() {
 
   const isOwner = !!(classroom && user && (user.role === 'ADMIN' || user.id === classroom.teacherId));
   const isStudentMember = !!(classroom && user?.role === 'STUDENT');
+  const isCurrentModerator = !!(classroom && user && classroom.moderatorId === user.id);
+  const canModerate = isOwner || isCurrentModerator;
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -58,7 +68,8 @@ export function ClassroomDetailPage() {
   const loadMembers = useCallback(async () => {
     setMembersLoading(true); setMembersError(null);
     try {
-      setMembers(await listMembers(id));
+      const { students } = await listMembers(id);
+      setMembers(students);
     } catch (err) {
       setMembersError(extractError(err) ?? 'Failed to load members');
     } finally {
@@ -69,10 +80,10 @@ export function ClassroomDetailPage() {
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    if (tab === 'members' && isOwner && !members && !membersLoading) {
+    if (tab === 'members' && canModerate && !members && !membersLoading) {
       loadMembers();
     }
-  }, [tab, isOwner, members, membersLoading, loadMembers]);
+  }, [tab, canModerate, members, membersLoading, loadMembers]);
 
   async function copyCode() {
     if (!classroom?.code) return;
@@ -122,20 +133,75 @@ export function ClassroomDetailPage() {
     try {
       await removeMember(classroom.id, studentId);
       setMembers((m) => (m ? m.filter((x) => x.student.id !== studentId) : m));
-      setClassroom((c) => (c ? { ...c, studentCount: Math.max(0, c.studentCount - 1) } : c));
+      setClassroom((c) => {
+        if (!c) return c;
+        const next = { ...c, studentCount: Math.max(0, c.studentCount - 1) };
+        if (c.moderatorId === studentId) next.moderatorId = null;
+        return next;
+      });
     } catch (err) {
       setMembersError(extractError(err) ?? 'Failed to remove student');
     }
   }
 
+  async function onToggleMute(studentId: string, currentlyMuted: boolean) {
+    if (!classroom) return;
+    setMembersError(null);
+    try {
+      if (currentlyMuted) await unmuteStudent(classroom.id, studentId);
+      else await muteStudent(classroom.id, studentId);
+      setMembers((m) => m
+        ? m.map((x) => x.student.id === studentId
+          ? { ...x, isMuted: !currentlyMuted, mutedAt: currentlyMuted ? null : new Date().toISOString() }
+          : x)
+        : m);
+    } catch (err) {
+      setMembersError(extractError(err) ?? 'Failed to update mute');
+    }
+  }
+
+  async function onPromote(studentId: string) {
+    if (!classroom) return;
+    setMembersError(null);
+    try {
+      await promoteModerator(classroom.id, studentId);
+      setClassroom((c) => (c ? { ...c, moderatorId: studentId } : c));
+      setMembers((m) => m
+        ? m.map((x) => ({ ...x, isModerator: x.student.id === studentId }))
+        : m);
+    } catch (err) {
+      setMembersError(extractError(err) ?? 'Failed to promote');
+    }
+  }
+
+  async function onDemote() {
+    if (!classroom) return;
+    setMembersError(null);
+    try {
+      await demoteModerator(classroom.id);
+      setClassroom((c) => (c ? { ...c, moderatorId: null } : c));
+      setMembers((m) => m ? m.map((x) => ({ ...x, isModerator: false })) : m);
+    } catch (err) {
+      setMembersError(extractError(err) ?? 'Failed to demote');
+    }
+  }
+
   const tabs = useMemo(() => {
     const base: { key: TabKey; label: string }[] = [
+      { key: 'stream', label: 'Stream' },
       { key: 'overview', label: 'Overview' },
       { key: 'assignments', label: 'Assignments' },
+      { key: 'quizzes', label: 'Quizzes' },
+      { key: 'chat', label: 'Chat' },
     ];
-    if (isOwner) base.push({ key: 'members', label: `Members (${classroom?.studentCount ?? 0})` });
+    if (isOwner) {
+      base.push({ key: 'insights', label: 'Insights' });
+    }
+    if (isOwner || isCurrentModerator) {
+      base.push({ key: 'members', label: `Members (${classroom?.studentCount ?? 0})` });
+    }
     return base;
-  }, [isOwner, classroom?.studentCount]);
+  }, [isOwner, isCurrentModerator, classroom?.studentCount]);
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading class…</div>;
   if (error || !classroom) {
@@ -197,6 +263,15 @@ export function ClassroomDetailPage() {
         ))}
       </div>
 
+      {tab === 'stream' && user && (
+        <StreamTab
+          classroomId={classroom.id}
+          viewerId={user.id}
+          viewerRole={user.role}
+          isOwner={isOwner}
+        />
+      )}
+
       {tab === 'overview' && (
         <div className="grid gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
@@ -227,7 +302,19 @@ export function ClassroomDetailPage() {
         <AssignmentsTab classroomId={classroom.id} viewerRole={user?.role} isOwner={isOwner} />
       )}
 
-      {tab === 'members' && isOwner && (
+      {tab === 'quizzes' && (
+        <QuizzesTab classroomId={classroom.id} viewerRole={user?.role} isOwner={isOwner} />
+      )}
+
+      {tab === 'chat' && user && (
+        <ChatTab classroom={classroom} viewerId={user.id} viewerRole={user.role} />
+      )}
+
+      {tab === 'insights' && isOwner && (
+        <InsightsTab classroomId={classroom.id} />
+      )}
+
+      {tab === 'members' && canModerate && (
         <Card>
           {membersLoading && <div className="text-sm text-muted-foreground">Loading members…</div>}
           {membersError && <div className="text-sm text-destructive">{membersError}</div>}
@@ -236,22 +323,60 @@ export function ClassroomDetailPage() {
           )}
           {!membersLoading && members && members.length > 0 && (
             <ul className="divide-y divide-foreground/10">
-              {members.map((m) => (
-                <li key={m.id} className="flex items-center justify-between gap-3 py-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-9 w-9 rounded-full bg-brand/15 text-brand grid place-items-center font-medium shrink-0">
-                      {m.student.name.slice(0, 1).toUpperCase()}
+              {members.map((m) => {
+                const isMod = m.isModerator;
+                const isMuted = m.isMuted;
+                return (
+                  <li key={m.id} className="flex items-center justify-between gap-3 py-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`h-9 w-9 rounded-full grid place-items-center font-medium shrink-0 ${
+                        isMod ? 'bg-brand-300 text-white ring-2 ring-brand-300' : 'bg-brand/15 text-brand'
+                      }`}>
+                        {m.student.name.slice(0, 1).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate inline-flex items-center gap-2">
+                          {m.student.name}
+                          {isMod && <ChatRolePill role="moderator" />}
+                          {isMuted && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 text-destructive px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">
+                              <VolumeX className="h-2.5 w-2.5" /> Muted
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">{m.student.email}</div>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">{m.student.name}</div>
-                      <div className="text-xs text-muted-foreground truncate">{m.student.email}</div>
+                    <div className="flex flex-wrap items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onToggleMute(m.student.id, isMuted)}
+                        title={isMuted ? 'Unmute' : 'Mute'}
+                      >
+                        {isMuted ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                        {isMuted ? 'Unmute' : 'Mute'}
+                      </Button>
+                      {isOwner && (
+                        isMod ? (
+                          <Button variant="ghost" size="sm" onClick={onDemote} title="Demote moderator">
+                            <ShieldOff className="h-4 w-4" /> Demote
+                          </Button>
+                        ) : (
+                          <Button variant="ghost" size="sm" onClick={() => onPromote(m.student.id)} title="Promote to moderator">
+                            <Shield className="h-4 w-4" /> Promote
+                          </Button>
+                        )
+                      )}
+                      {isOwner && (
+                        <Button variant="ghost" size="sm" onClick={() => onRemoveMember(m.student.id)} title="Remove from class">
+                          <UserMinus className="h-4 w-4" /> Remove
+                        </Button>
+                      )}
                     </div>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={() => onRemoveMember(m.student.id)}>
-                    <UserMinus className="h-4 w-4" /> Remove
-                  </Button>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Card>

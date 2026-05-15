@@ -147,8 +147,17 @@ describe('enrolment', () => {
     expect(members.status).toBe(200);
     expect(members.body.students.map((m: { student: { id: string } }) => m.student.id)).toContain(s.id);
 
+    // Enrolled students can read the roster (for chat), but mute info is hidden.
     const studentListMembers = await student.get(`/api/classrooms/${id}/students`);
-    expect(studentListMembers.status).toBe(403);
+    expect(studentListMembers.status).toBe(200);
+    expect(studentListMembers.body.students.every((m: { mutedAt: string | null }) => m.mutedAt === null)).toBe(true);
+
+    // Non-members are still forbidden.
+    const { agent: outsider } = await registerAgent(app, {
+      name: 'SO', email: emailFor('so'), role: 'STUDENT',
+    });
+    const outsiderList = await outsider.get(`/api/classrooms/${id}/students`);
+    expect(outsiderList.status).toBe(403);
 
     const removed = await owner.delete(`/api/classrooms/${id}/students/${s.id}`);
     expect(removed.status).toBe(204);
