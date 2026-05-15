@@ -54,7 +54,7 @@ export function StudentProgressSection() {
                 <CartesianGrid stroke="rgba(0,0,0,0.06)" vertical={false} />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-                <Tooltip cursor={{ fill: 'rgba(198,103,38,0.08)' }} formatter={(v: number, k: string) => [`${v}%`, k === 'grade' ? 'Avg grade' : 'Avg quiz']} />
+                <Tooltip cursor={{ fill: 'rgba(198,103,38,0.08)' }} formatter={(v, k) => [`${Number(v ?? 0)}%`, k === 'grade' ? 'Avg grade' : 'Avg quiz']} />
                 <Bar dataKey="grade" fill={BRAND} radius={[6, 6, 0, 0]} name="Avg grade" />
                 <Bar dataKey="quiz" fill="#E2853B" radius={[6, 6, 0, 0]} name="Avg quiz" />
               </BarChart>

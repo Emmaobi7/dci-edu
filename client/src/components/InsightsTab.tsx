@@ -63,7 +63,7 @@ export function InsightsTab({ classroomId }: { classroomId: string }) {
                 <CartesianGrid stroke="rgba(0,0,0,0.06)" vertical={false} />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={50} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-                <Tooltip cursor={{ fill: 'rgba(198,103,38,0.08)' }} formatter={(v: number) => [`${v}%`, 'Completion']} />
+                <Tooltip cursor={{ fill: 'rgba(198,103,38,0.08)' }} formatter={(v) => [`${Number(v ?? 0)}%`, 'Completion']} />
                 <Bar dataKey="value" fill={BRAND} radius={[6, 6, 0, 0]} />
               </BarChart>
             </ChartFrame>
@@ -82,7 +82,7 @@ export function InsightsTab({ classroomId }: { classroomId: string }) {
                 <CartesianGrid stroke="rgba(0,0,0,0.06)" vertical={false} />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={50} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-                <Tooltip cursor={{ fill: 'rgba(198,103,38,0.08)' }} formatter={(v: number) => [`${v}%`, 'Avg score']} />
+                <Tooltip cursor={{ fill: 'rgba(198,103,38,0.08)' }} formatter={(v) => [`${Number(v ?? 0)}%`, 'Avg score']} />
                 <Bar dataKey="value" fill={BRAND_LIGHT} radius={[6, 6, 0, 0]} />
               </BarChart>
             </ChartFrame>
