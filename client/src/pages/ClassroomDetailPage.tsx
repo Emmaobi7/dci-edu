@@ -26,6 +26,7 @@ import { StreamTab } from '@/components/StreamTab';
 import { InsightsTab } from '@/components/InsightsTab';
 import { ChatTab } from '@/components/ChatTab';
 import { ChatRolePill } from '@/components/ChatRoleBadge';
+import { StudentProfileDialog } from '@/components/StudentProfileDialog';
 
 type TabKey = 'stream' | 'overview' | 'assignments' | 'quizzes' | 'chat' | 'members' | 'insights';
 
@@ -48,6 +49,7 @@ export function ClassroomDetailPage() {
   const [regenBusy, setRegenBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
 
   const isOwner = !!(classroom && user && (user.role === 'ADMIN' || user.id === classroom.teacherId));
   const isStudentMember = !!(classroom && user?.role === 'STUDENT');
@@ -328,7 +330,13 @@ export function ClassroomDetailPage() {
                 const isMuted = m.isMuted;
                 return (
                   <li key={m.id} className="flex items-center justify-between gap-3 py-3">
-                    <div className="flex items-center gap-3 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => isOwner && setProfileStudentId(m.student.id)}
+                      disabled={!isOwner}
+                      className="flex items-center gap-3 min-w-0 text-left rounded-xl px-1 -mx-1 py-1 transition-colors enabled:hover:bg-white/60 disabled:cursor-default"
+                      title={isOwner ? 'View student profile' : undefined}
+                    >
                       <div className={`h-9 w-9 rounded-full grid place-items-center font-medium shrink-0 ${
                         isMod ? 'bg-brand-300 text-white ring-2 ring-brand-300' : 'bg-brand/15 text-brand'
                       }`}>
@@ -346,7 +354,7 @@ export function ClassroomDetailPage() {
                         </div>
                         <div className="text-xs text-muted-foreground truncate">{m.student.email}</div>
                       </div>
-                    </div>
+                    </button>
                     <div className="flex flex-wrap items-center gap-1">
                       <Button
                         variant="ghost"
@@ -393,6 +401,12 @@ export function ClassroomDetailPage() {
         name={classroom.name}
         onClose={() => setDeleteOpen(false)}
         onConfirm={onDelete}
+      />
+      <StudentProfileDialog
+        open={profileStudentId !== null}
+        classroomId={classroom.id}
+        studentId={profileStudentId}
+        onClose={() => setProfileStudentId(null)}
       />
     </div>
   );

@@ -5,7 +5,31 @@ export interface User {
   email: string;
   name: string;
   role: Role;
+  firstName: string | null;
+  surname: string | null;
+  title: string | null;
+  phone: string | null;
+  country: string | null;
+  placeOfWork: string | null;
+  positionAtWapcp: string | null;
+  matriculationNumber: string | null;
+  subject: string | null;
+  avatarUrl: string | null;
 }
+
+export type ProfileField =
+  | 'title'
+  | 'name'
+  | 'firstName'
+  | 'surname'
+  | 'phone'
+  | 'country'
+  | 'placeOfWork'
+  | 'positionAtWapcp'
+  | 'matriculationNumber'
+  | 'subject';
+
+export type ProfileUpdate = Partial<Record<ProfileField, string | null>>;
 
 export interface TeacherSummary {
   id: string;

@@ -15,6 +15,8 @@ export function RegisterPage() {
   const navigate = useNavigate();
 
   const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [surname, setSurname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<SelectableRole>('STUDENT');
@@ -26,7 +28,11 @@ export function RegisterPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await register({ name, email, password, role });
+      if (role === 'STUDENT') {
+        await register({ role, firstName, surname, email, password });
+      } else {
+        await register({ role, name, email, password });
+      }
       navigate('/dashboard', { replace: true });
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -54,10 +60,35 @@ export function RegisterPage() {
           <CardDescription>Join Wapcharm Classroom as a student or teacher.</CardDescription>
         </CardHeader>
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="name">Full name</Label>
-            <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
-          </div>
+          {role === 'STUDENT' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="firstName">First name</Label>
+                <Input
+                  id="firstName"
+                  required
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  autoComplete="given-name"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="surname">Surname</Label>
+                <Input
+                  id="surname"
+                  required
+                  value={surname}
+                  onChange={(e) => setSurname(e.target.value)}
+                  autoComplete="family-name"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="name">Full name</Label>
+              <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />

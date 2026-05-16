@@ -11,6 +11,7 @@ import notificationRoutes from './routes/notification.routes.js';
 import quizRoutes from './routes/quiz.routes.js';
 import meRoutes from './routes/me.routes.js';
 import messageRoutes from './routes/message.routes.js';
+import usersRoutes from './routes/users.routes.js';
 import { errorHandler, notFound } from './middleware/error.js';
 
 export function createApp() {
@@ -38,6 +39,7 @@ export function createApp() {
   app.use('/api/quizzes', quizRoutes);
   app.use('/api/me', meRoutes);
   app.use('/api/messages', messageRoutes);
+  app.use('/api/users', usersRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

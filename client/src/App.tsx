@@ -10,6 +10,7 @@ import { ClassesPage } from '@/pages/ClassesPage';
 import { ClassroomDetailPage } from '@/pages/ClassroomDetailPage';
 import { AssignmentDetailPage } from '@/pages/AssignmentDetailPage';
 import { NotificationsPage } from '@/pages/NotificationsPage';
+import { ProfilePage } from '@/pages/ProfilePage';
 import { QuizDetailPage } from '@/pages/QuizDetailPage';
 import { TeacherAttemptPage } from '@/pages/TeacherAttemptPage';
 
@@ -32,6 +33,7 @@ export default function App() {
               <Route path="/classes/:classId/quizzes/:id" element={<QuizDetailPage />} />
               <Route path="/classes/:classId/quizzes/:id/attempts/:attemptId" element={<TeacherAttemptPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
             </Route>
           </Route>
 

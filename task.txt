@@ -4,13 +4,13 @@ app must be beautiful responsive and feel like glass and have amazing ui/ux
 
 
 
-Build last
-Real-time chat / messaging
-week 6
-What to build
-Per-class chat room · all enrolled users can message · messages persist in DB · online indicator (optional) · teacher can mute students
-Tips
-Use Socket.io — straightforward with Express · join a socket room per classId · save messages to DB on server · load last 50 messages on mount
-socket.io + socket.io-client
-Message model (classId, senderId, text, timestamp)
-Room = classId, emit to room only
+. Students Profile fields: 
+•	Title
+•	Name
+•	Surname
+•	Email address
+•	Phone number
+•	Country of resident 
+•	Place of work
+•	Position held at WAPCP
+•	Matriculation number

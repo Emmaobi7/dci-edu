@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { BookOpen, GraduationCap, LayoutDashboard, Users, Shield } from 'lucide-react';
+import { BookOpen, GraduationCap, LayoutDashboard, Users, Shield, UserCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 import type { Role } from '@/lib/types';
@@ -14,6 +14,7 @@ interface NavItem {
 const items: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/classes', label: 'Classes', icon: BookOpen },
+  { to: '/profile', label: 'Profile', icon: UserCircle2, roles: ['STUDENT', 'TEACHER'] },
   { to: '/students', label: 'Students', icon: GraduationCap, roles: ['TEACHER', 'ADMIN'] },
   { to: '/users', label: 'Users', icon: Users, roles: ['ADMIN'] },
   { to: '/admin', label: 'Admin', icon: Shield, roles: ['ADMIN'] },

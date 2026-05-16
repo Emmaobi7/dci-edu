@@ -71,11 +71,31 @@ describe('POST /api/auth/register', () => {
     const email = emailFor('dup');
     await request(app)
       .post('/api/auth/register')
-      .send({ name: 'D', email, password: PASSWORD });
+      .send({ firstName: 'D', surname: 'One', email, password: PASSWORD });
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ name: 'D2', email, password: PASSWORD });
+      .send({ firstName: 'D', surname: 'Two', email, password: PASSWORD });
     expect(res.status).toBe(409);
+  });
+
+  it('rejects a STUDENT without firstName/surname with 400', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ name: 'Solo', email: emailFor('solo'), password: PASSWORD });
+    expect(res.status).toBe(400);
+  });
+
+  it('composes name from firstName and surname for students', async () => {
+    const res = await request(app).post('/api/auth/register').send({
+      firstName: 'Ada',
+      surname: 'Lovelace',
+      email: emailFor('compose'),
+      password: PASSWORD,
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.user.name).toBe('Ada Lovelace');
+    expect(res.body.user.firstName).toBe('Ada');
+    expect(res.body.user.surname).toBe('Lovelace');
   });
 });
 
@@ -84,7 +104,7 @@ describe('POST /api/auth/login', () => {
     const email = emailFor('wrong');
     await request(app)
       .post('/api/auth/register')
-      .send({ name: 'W', email, password: PASSWORD });
+      .send({ firstName: 'W', surname: 'Tester', email, password: PASSWORD });
     const res = await request(app)
       .post('/api/auth/login')
       .send({ email, password: 'definitely-not-it' });
@@ -95,7 +115,7 @@ describe('POST /api/auth/login', () => {
     const email = emailFor('login');
     await request(app)
       .post('/api/auth/register')
-      .send({ name: 'L', email, password: PASSWORD });
+      .send({ firstName: 'L', surname: 'Tester', email, password: PASSWORD });
     const res = await request(app).post('/api/auth/login').send({ email, password: PASSWORD });
     expect(res.status).toBe(200);
     expect(res.body.user.email).toBe(email);
@@ -113,7 +133,7 @@ describe('GET /api/auth/me', () => {
   it('returns the current user when authenticated', async () => {
     const email = emailFor('me');
     const agent = request.agent(app);
-    await agent.post('/api/auth/register').send({ name: 'M', email, password: PASSWORD });
+    await agent.post('/api/auth/register').send({ firstName: 'M', surname: 'Tester', email, password: PASSWORD });
     const res = await agent.get('/api/auth/me');
     expect(res.status).toBe(200);
     expect(res.body.user.email).toBe(email);
@@ -124,7 +144,7 @@ describe('POST /api/auth/logout', () => {
   it('clears the cookie and subsequent /me returns 401', async () => {
     const email = emailFor('logout');
     const agent = request.agent(app);
-    await agent.post('/api/auth/register').send({ name: 'O', email, password: PASSWORD });
+    await agent.post('/api/auth/register').send({ firstName: 'O', surname: 'Tester', email, password: PASSWORD });
 
     const out = await agent.post('/api/auth/logout');
     expect(out.status).toBe(204);

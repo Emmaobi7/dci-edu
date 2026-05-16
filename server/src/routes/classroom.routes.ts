@@ -10,6 +10,7 @@ import {
   updateClassroom,
 } from '../controllers/classroom.controller.js';
 import { listStudents, removeStudent } from '../controllers/enrolment.controller.js';
+import { getClassroomStudentProfile } from '../controllers/profile.controller.js';
 import { createAssignment, listAssignments } from '../controllers/assignment.controller.js';
 import { createAnnouncement, listAnnouncements } from '../controllers/announcement.controller.js';
 import { createQuiz, listQuizzes } from '../controllers/quiz.controller.js';
@@ -29,6 +30,7 @@ router.patch('/:id', asyncHandler(updateClassroom));
 router.delete('/:id', asyncHandler(deleteClassroom));
 router.post('/:id/regenerate-code', asyncHandler(regenerateCode));
 router.get('/:id/students', asyncHandler(listStudents));
+router.get('/:id/students/:studentId/profile', asyncHandler(getClassroomStudentProfile));
 router.delete('/:id/students/:studentId', asyncHandler(removeStudent));
 router.get('/:id/assignments', asyncHandler(listAssignments));
 router.post('/:id/assignments', asyncHandler(createAssignment));

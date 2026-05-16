@@ -26,6 +26,7 @@ const ALLOWED_IMAGE_EXTENSIONS = new Set<string>([
 ]);
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
 export const UPLOAD_ROOT = path.isAbsolute(env.UPLOAD_DIR)
   ? env.UPLOAD_DIR
@@ -34,6 +35,7 @@ export const UPLOAD_ROOT = path.isAbsolute(env.UPLOAD_DIR)
 export const ATTACHMENTS_DIR = path.join(UPLOAD_ROOT, 'attachments');
 export const SUBMISSIONS_DIR = path.join(UPLOAD_ROOT, 'submissions');
 export const ANNOUNCEMENT_IMAGES_DIR = path.join(UPLOAD_ROOT, 'announcement-images');
+export const AVATARS_DIR = path.join(UPLOAD_ROOT, 'avatars');
 
 async function ensureDir(dir: string): Promise<void> {
   await mkdir(dir, { recursive: true });
@@ -98,6 +100,12 @@ export const announcementImageUpload = multer({
   fileFilter: imageFilter,
 });
 
+export const avatarUpload = multer({
+  storage: buildStorage(AVATARS_DIR),
+  limits: { fileSize: MAX_AVATAR_BYTES, files: 1 },
+  fileFilter: imageFilter,
+});
+
 export function attachmentPath(storedName: string): string {
   return path.join(ATTACHMENTS_DIR, storedName);
 }
@@ -108,6 +116,10 @@ export function submissionPath(storedName: string): string {
 
 export function announcementImagePath(storedName: string): string {
   return path.join(ANNOUNCEMENT_IMAGES_DIR, storedName);
+}
+
+export function avatarPath(storedName: string): string {
+  return path.join(AVATARS_DIR, storedName);
 }
 
 export async function safeUnlink(filePath: string): Promise<void> {

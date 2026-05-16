@@ -5,26 +5,36 @@ import { signToken } from '../utils/jwt.js';
 import { AUTH_COOKIE, authCookieOptions, clearCookieOptions } from '../utils/cookies.js';
 import { HttpError } from '../utils/HttpError.js';
 import { loginSchema, registerSchema } from '../schemas/auth.schema.js';
-
-function toPublicUser(u: { id: string; email: string; name: string; role: 'ADMIN' | 'TEACHER' | 'STUDENT' }) {
-  return { id: u.id, email: u.email, name: u.name, role: u.role };
-}
+import { toUserDto, userDtoSelect } from '../utils/userDto.js';
 
 export async function register(req: Request, res: Response): Promise<void> {
-  const { name, email, password, role } = registerSchema.parse(req.body);
+  const data = registerSchema.parse(req.body);
+  const { email, password, role } = data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw new HttpError(409, 'Email already registered');
 
   const passwordHash = await bcrypt.hash(password, 12);
+  const name =
+    role === 'STUDENT'
+      ? `${data.firstName} ${data.surname}`.replace(/\s+/g, ' ').trim()
+      : (data.name as string);
+
   const user = await prisma.user.create({
-    data: { name, email, passwordHash, role },
-    select: { id: true, email: true, name: true, role: true },
+    data: {
+      name,
+      email,
+      passwordHash,
+      role,
+      firstName: role === 'STUDENT' ? data.firstName : null,
+      surname: role === 'STUDENT' ? data.surname : null,
+    },
+    select: userDtoSelect,
   });
 
   const token = signToken({ sub: user.id, role: user.role });
   res.cookie(AUTH_COOKIE, token, authCookieOptions);
-  res.status(201).json({ user: toPublicUser(user) });
+  res.status(201).json({ user: toUserDto(user) });
 }
 
 export async function login(req: Request, res: Response): Promise<void> {
@@ -38,7 +48,7 @@ export async function login(req: Request, res: Response): Promise<void> {
 
   const token = signToken({ sub: user.id, role: user.role });
   res.cookie(AUTH_COOKIE, token, authCookieOptions);
-  res.json({ user: toPublicUser(user) });
+  res.json({ user: toUserDto(user) });
 }
 
 export async function logout(_req: Request, res: Response): Promise<void> {
@@ -50,8 +60,8 @@ export async function me(req: Request, res: Response): Promise<void> {
   if (!req.user) throw new HttpError(401, 'Not authenticated');
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
-    select: { id: true, email: true, name: true, role: true },
+    select: userDtoSelect,
   });
   if (!user) throw new HttpError(401, 'Not authenticated');
-  res.json({ user: toPublicUser(user) });
+  res.json({ user: toUserDto(user) });
 }

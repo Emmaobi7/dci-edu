@@ -23,12 +23,21 @@ export async function registerAgent(
   opts: { name: string; email: string; role?: 'TEACHER' | 'STUDENT' },
 ) {
   const agent = request.agent(app);
-  const res = await agent.post('/api/auth/register').send({
-    name: opts.name,
+  const role = opts.role ?? 'STUDENT';
+  const [firstName, ...rest] = opts.name.split(/\s+/);
+  const surname = rest.join(' ') || 'Student';
+  const payload: Record<string, string> = {
     email: opts.email,
     password: TEST_PASSWORD,
-    role: opts.role ?? 'STUDENT',
-  });
+    role,
+  };
+  if (role === 'STUDENT') {
+    payload.firstName = firstName ?? opts.name;
+    payload.surname = surname;
+  } else {
+    payload.name = opts.name;
+  }
+  const res = await agent.post('/api/auth/register').send(payload);
   if (res.status !== 201) {
     throw new Error(`registerAgent failed: ${res.status} ${JSON.stringify(res.body)}`);
   }

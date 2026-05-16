@@ -1,12 +1,16 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api } from './api';
-import type { Role, User } from './types';
+import type { User } from './types';
+
+type RegisterInput =
+  | { role: 'TEACHER'; name: string; email: string; password: string }
+  | { role: 'STUDENT'; firstName: string; surname: string; email: string; password: string };
 
 interface AuthState {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
-  register: (input: { name: string; email: string; password: string; role: Exclude<Role, 'ADMIN'> }) => Promise<User>;
+  register: (input: RegisterInput) => Promise<User>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -39,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (input: { name: string; email: string; password: string; role: Exclude<Role, 'ADMIN'> }) => {
+    async (input: RegisterInput) => {
       const { data } = await api.post<{ user: User }>('/auth/register', input);
       setUser(data.user);
       return data.user;
