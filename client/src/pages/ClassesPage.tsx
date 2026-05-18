@@ -148,7 +148,7 @@ function EmptyState({
       </div>
       <h3 className="font-semibold text-lg">No classes yet</h3>
       <p className="text-sm text-muted-foreground mt-1">
-        {isTeacher ? 'Create your first class to get started.' : isStudent ? 'Ask your teacher for a class code to join.' : 'No classes available.'}
+        {isTeacher ? 'Create your first class to get started.' : isStudent ? 'Ask your faculty for a class code to join.' : 'No classes available.'}
       </p>
       <div className="mt-5 flex justify-center gap-2">
         {isTeacher && <Button onClick={onCreate}><Plus className="h-4 w-4" /> New class</Button>}
@@ -227,7 +227,7 @@ function JoinClassDialog({ open, onClose, onJoined }: { open: boolean; onClose: 
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="Join a class" description="Enter the code your teacher shared with you.">
+    <Dialog open={open} onClose={onClose} title="Join a class" description="Enter the code your faculty shared with you.">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="cls-code">Class code</Label>

@@ -12,6 +12,7 @@ import {
   updateAnnouncementSchema,
 } from '../schemas/announcement.schema.js';
 import {
+  announcementDocPath,
   announcementImagePath,
   safeUnlink,
   sanitizeDownloadName,
@@ -31,6 +32,9 @@ const attachmentSelect = {
   size: true,
   youtubeId: true,
   youtubeUrl: true,
+  url: true,
+  title: true,
+  host: true,
   createdAt: true,
 } as const;
 
@@ -165,8 +169,12 @@ export async function deleteAnnouncement(req: Request, res: Response): Promise<v
   await prisma.announcement.delete({ where: { id } });
   await Promise.all(
     existing.attachments
-      .filter((a) => a.kind === 'IMAGE' && a.storedName)
-      .map((a) => safeUnlink(announcementImagePath(a.storedName as string))),
+      .filter((a) => a.storedName && (a.kind === 'IMAGE' || a.kind === 'DOCUMENT'))
+      .map((a) => safeUnlink(
+        a.kind === 'IMAGE'
+          ? announcementImagePath(a.storedName as string)
+          : announcementDocPath(a.storedName as string),
+      )),
   );
   res.status(204).end();
 }

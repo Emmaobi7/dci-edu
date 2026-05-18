@@ -6,6 +6,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 import { Button } from '@/components/ui/button';
 import { listClassrooms } from '@/lib/classrooms';
 import { listMyUpcomingAssignments, type UpcomingAssignmentsResult } from '@/lib/assignments';
+import { roleLabel } from '@/lib/utils';
 import type { Classroom } from '@/lib/types';
 import { StudentProgressSection } from '@/components/StudentProgressSection';
 
@@ -45,7 +46,7 @@ export function DashboardPage() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Hello, {user?.name} 👋</h1>
         <p className="text-muted-foreground mt-1">
-          You are signed in as <span className="font-medium text-foreground">{user?.role.toLowerCase()}</span>.
+          You are signed in as <span className="font-medium text-foreground">{roleLabel(user?.role).toLowerCase()}</span>.
         </p>
       </div>
 

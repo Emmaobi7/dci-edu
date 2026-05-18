@@ -251,7 +251,7 @@ function ChatLayout(p: LayoutProps) {
 
       {p.muted ? (
         <div className="px-5 py-3 border-t border-foreground/10 bg-destructive/5 text-sm text-destructive inline-flex items-center gap-2">
-          <VolumeX className="h-4 w-4" /> You have been muted by a teacher.
+          <VolumeX className="h-4 w-4" /> You have been muted by faculty.
         </div>
       ) : (
         <div className="px-5 py-3 border-t border-foreground/10">

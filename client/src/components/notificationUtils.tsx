@@ -1,4 +1,4 @@
-import { ClipboardList, FileQuestion, Megaphone, MessageCircle } from 'lucide-react';
+import { CalendarDays, ClipboardList, FileQuestion, Megaphone, MessageCircle } from 'lucide-react';
 import type { NotificationItem, NotificationType } from '@/lib/types';
 
 export function notificationTargetPath(n: NotificationItem): string | null {
@@ -7,6 +7,9 @@ export function notificationTargetPath(n: NotificationItem): string | null {
   }
   if (n.quizId && n.classroomId) {
     return `/classes/${n.classroomId}/quizzes/${n.quizId}`;
+  }
+  if (n.eventId) {
+    return '/calendar';
   }
   if (n.classroomId) {
     return `/classes/${n.classroomId}`;
@@ -20,6 +23,7 @@ export function notificationIconFor(type: NotificationType) {
     case 'ASSIGNMENT_NEW': return ClipboardList;
     case 'COMMENT_NEW': return MessageCircle;
     case 'QUIZ_NEW': return FileQuestion;
+    case 'EVENT_NEW': return CalendarDays;
     default: return Megaphone;
   }
 }

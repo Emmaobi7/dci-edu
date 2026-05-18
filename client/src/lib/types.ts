@@ -13,7 +13,7 @@ export interface User {
   placeOfWork: string | null;
   positionAtWapcp: string | null;
   matriculationNumber: string | null;
-  subject: string | null;
+  topics: string | null;
   avatarUrl: string | null;
 }
 
@@ -27,7 +27,7 @@ export type ProfileField =
   | 'placeOfWork'
   | 'positionAtWapcp'
   | 'matriculationNumber'
-  | 'subject';
+  | 'topics';
 
 export type ProfileUpdate = Partial<Record<ProfileField, string | null>>;
 
@@ -124,6 +124,19 @@ export interface UpcomingAssignment {
   classroom: { id: string; name: string };
 }
 
+export interface MyAssignment {
+  id: string;
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  classroomId: string;
+  createdAt: string;
+  updatedAt: string;
+  classroom: { id: string; name: string };
+  _count?: { submissions: number };
+  mySubmission?: MySubmissionSummary | null;
+}
+
 export interface Submission {
   id: string;
   assignmentId: string;
@@ -142,7 +155,7 @@ export interface Submission {
 }
 
 
-export type AnnouncementAttachmentKind = 'IMAGE' | 'YOUTUBE';
+export type AnnouncementAttachmentKind = 'IMAGE' | 'YOUTUBE' | 'DOCUMENT' | 'LINK';
 
 export interface AnnouncementAttachment {
   id: string;
@@ -152,6 +165,9 @@ export interface AnnouncementAttachment {
   size: number | null;
   youtubeId: string | null;
   youtubeUrl: string | null;
+  url: string | null;
+  title: string | null;
+  host: string | null;
   createdAt: string;
 }
 
@@ -181,7 +197,8 @@ export type NotificationType =
   | 'ANNOUNCEMENT_NEW'
   | 'ASSIGNMENT_NEW'
   | 'COMMENT_NEW'
-  | 'QUIZ_NEW';
+  | 'QUIZ_NEW'
+  | 'EVENT_NEW';
 
 export interface NotificationItem {
   id: string;
@@ -192,9 +209,28 @@ export interface NotificationItem {
   announcementId: string | null;
   assignmentId: string | null;
   quizId: string | null;
+  eventId: string | null;
   readAt: string | null;
   createdAt: string;
   classroom: { id: string; name: string } | null;
+}
+
+export type EventType = 'EVENT' | 'CLASS_SESSION';
+
+export interface CalendarEvent {
+  id: string;
+  type: EventType;
+  title: string;
+  description: string | null;
+  location: string | null;
+  startsAt: string;
+  endsAt: string | null;
+  classroomId: string | null;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+  classroom: { id: string; name: string } | null;
+  createdBy: { id: string; name: string; email: string };
 }
 
 export type QuestionType = 'MCQ_SINGLE' | 'MCQ_MULTI' | 'TRUE_FALSE';
@@ -236,6 +272,10 @@ export interface QuizSummary {
 
 export interface QuizDetail extends QuizSummary {
   questions?: QuizQuestionAuthor[];
+}
+
+export interface MyQuiz extends QuizSummary {
+  classroom: { id: string; name: string };
 }
 
 export interface QuizAttemptOption {

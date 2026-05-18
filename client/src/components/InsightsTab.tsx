@@ -45,8 +45,8 @@ export function InsightsTab({ classroomId }: { classroomId: string }) {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard icon={<Users className="h-5 w-5" />} label="Students" value={totals.studentCount} />
         <StatCard icon={<ClipboardCheck className="h-5 w-5" />} label="Avg completion" value={`${totals.avgCompletionRate}%`} hint={`${totals.assignmentsTotal} assignments`} />
-        <StatCard icon={<FileQuestion className="h-5 w-5" />} label="Avg quiz score" value={`${totals.avgQuizPercent}%`} hint={`${totals.quizzesTotal} quizzes`} />
-        <StatCard icon={<GraduationCap className="h-5 w-5" />} label="Submitted total" value={assignments.reduce((a, x) => a + x.submitted, 0) + quizzes.reduce((a, x) => a + x.submitted, 0)} hint="assignments + quizzes" />
+        <StatCard icon={<FileQuestion className="h-5 w-5" />} label="Avg exam score" value={`${totals.avgQuizPercent}%`} hint={`${totals.quizzesTotal} exams`} />
+        <StatCard icon={<GraduationCap className="h-5 w-5" />} label="Submitted total" value={assignments.reduce((a, x) => a + x.submitted, 0) + quizzes.reduce((a, x) => a + x.submitted, 0)} hint="assignments + exams" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -72,10 +72,10 @@ export function InsightsTab({ classroomId }: { classroomId: string }) {
         <Card>
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="h-4 w-4 text-brand" />
-            <h3 className="font-semibold">Avg quiz score %</h3>
+            <h3 className="font-semibold">Avg exam score %</h3>
           </div>
           {quizChart.length === 0 ? (
-            <EmptyChart label="No quizzes yet" />
+            <EmptyChart label="No exams yet" />
           ) : (
             <ChartFrame>
               <BarChart data={quizChart} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>

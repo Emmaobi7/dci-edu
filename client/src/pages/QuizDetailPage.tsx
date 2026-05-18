@@ -33,7 +33,7 @@ export function QuizDetailPage() {
     try {
       setQuiz(await getQuiz(id));
     } catch (err) {
-      setError(extractError(err) ?? 'Failed to load quiz');
+      setError(extractError(err) ?? 'Failed to load exam');
     }
   }, [id]);
 
@@ -49,7 +49,7 @@ export function QuizDetailPage() {
       </div>
     );
   }
-  if (!quiz) return <div className="text-sm text-muted-foreground">Loading quiz…</div>;
+  if (!quiz) return <div className="text-sm text-muted-foreground">Loading exam…</div>;
 
   return (
     <div className="flex flex-col gap-6">
@@ -130,8 +130,8 @@ function TeacherView({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" onClick={() => setEditOpen(true)} disabled={hasAttempts}
-          title={hasAttempts ? 'Cannot edit a quiz with attempts' : ''}>
-          <Pencil className="h-4 w-4" /> Edit quiz
+          title={hasAttempts ? 'Cannot edit an exam with attempts' : ''}>
+          <Pencil className="h-4 w-4" /> Edit exam
         </Button>
         <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
           <Trash2 className="h-4 w-4" /> Delete
@@ -156,12 +156,12 @@ function TeacherView({
         onSaved={() => { setEditOpen(false); onChanged(); }}
       />
 
-      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete quiz?" description="This will permanently delete the quiz and all attempts.">
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete exam?" description="This will permanently delete the exam and all attempts.">
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={() => setDeleteOpen(false)}>Cancel</Button>
           <Button type="button" variant="destructive" onClick={async () => {
             try { await deleteQuiz(quiz.id); onDeleted(); }
-            catch (err) { setError(extractError(err) ?? 'Failed to delete quiz'); setDeleteOpen(false); }
+            catch (err) { setError(extractError(err) ?? 'Failed to delete exam'); setDeleteOpen(false); }
           }}><Trash2 className="h-4 w-4" /> Delete</Button>
         </div>
       </Dialog>
@@ -202,7 +202,7 @@ function StudentView({ quiz, classId }: { quiz: QuizDetail; classId: string }) {
       await startQuizAttempt(quiz.id);
       await loadAttempt();
     } catch (err) {
-      setError(extractError(err) ?? 'Failed to start quiz');
+      setError(extractError(err) ?? 'Failed to start exam');
     } finally {
       setStarting(false);
     }
@@ -221,12 +221,12 @@ function StudentView({ quiz, classId }: { quiz: QuizDetail; classId: string }) {
             ? <li>You will have <span className="font-medium text-foreground">{quiz.timeLimitMinutes} minutes</span> once you start.</li>
             : <li>No time limit.</li>}
           <li>You can revisit previous questions and change answers before submitting.</li>
-          <li>Once you submit, you cannot retake the quiz.</li>
+          <li>Once you submit, you cannot retake the exam.</li>
           {overdue && <li className="text-destructive">The due date has passed — your submission will be marked late.</li>}
         </ul>
         <div>
           <Button onClick={onStart} disabled={starting}>
-            <Play className="h-4 w-4" /> {starting ? 'Starting…' : 'Start quiz'}
+            <Play className="h-4 w-4" /> {starting ? 'Starting…' : 'Start exam'}
           </Button>
         </div>
       </Card>

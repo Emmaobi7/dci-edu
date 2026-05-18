@@ -3,11 +3,14 @@ import { prisma } from '../db/prisma.js';
 import { HttpError } from '../utils/HttpError.js';
 import { ensureClassroomMember, isOwnerOrAdmin } from '../utils/classroomAuth.js';
 import {
+  addLinkSchema,
   addYoutubeSchema,
   commentSchema,
+  normalizeLink,
   parseYoutubeId,
 } from '../schemas/announcement.schema.js';
 import {
+  announcementDocPath,
   announcementImagePath,
   safeUnlink,
   sanitizeDownloadName,
@@ -26,6 +29,9 @@ const attachmentPublic = {
   size: true,
   youtubeId: true,
   youtubeUrl: true,
+  url: true,
+  title: true,
+  host: true,
   createdAt: true,
 } as const;
 
@@ -104,6 +110,78 @@ export async function addYoutube(req: Request, res: Response): Promise<void> {
   res.status(201).json({ attachment });
 }
 
+export async function uploadDocuments(req: Request, res: Response): Promise<void> {
+  const user = requireUser(req);
+  const { id } = req.params as { id: string };
+  const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+
+  const a = await prisma.announcement.findUnique({
+    where: { id },
+    select: { id: true, authorId: true, classroom: { select: { teacherId: true } } },
+  });
+  if (!a) {
+    await Promise.all(files.map((f) => safeUnlink(f.path)));
+    throw new HttpError(404, 'Announcement not found');
+  }
+  if (!isOwnerOrAdmin(user, a.classroom.teacherId) && user.id !== a.authorId) {
+    await Promise.all(files.map((f) => safeUnlink(f.path)));
+    throw new HttpError(403, 'Forbidden');
+  }
+  if (files.length === 0) throw new HttpError(400, 'No files uploaded');
+
+  const created = await prisma.$transaction(
+    files.map((f) =>
+      prisma.announcementAttachment.create({
+        data: {
+          announcementId: id,
+          kind: 'DOCUMENT',
+          filename: f.originalname,
+          storedName: f.filename,
+          mimetype: f.mimetype,
+          size: f.size,
+        },
+        select: attachmentPublic,
+      }),
+    ),
+  );
+  res.status(201).json({ attachments: created });
+}
+
+export async function addLink(req: Request, res: Response): Promise<void> {
+  const user = requireUser(req);
+  const { id } = req.params as { id: string };
+  const a = await loadAnnouncementForWrite(id);
+  if (!isOwnerOrAdmin(user, a.classroom.teacherId) && user.id !== a.authorId) {
+    throw new HttpError(403, 'Forbidden');
+  }
+  const data = addLinkSchema.parse(req.body);
+
+  // If the user pasted a YouTube URL here, file it under YOUTUBE so it embeds.
+  const ytId = parseYoutubeId(data.url);
+  if (ytId) {
+    const attachment = await prisma.announcementAttachment.create({
+      data: { announcementId: id, kind: 'YOUTUBE', youtubeId: ytId, youtubeUrl: data.url },
+      select: attachmentPublic,
+    });
+    res.status(201).json({ attachment });
+    return;
+  }
+
+  const normalized = normalizeLink(data.url);
+  if (!normalized) throw new HttpError(400, 'Invalid URL');
+  const attachment = await prisma.announcementAttachment.create({
+    data: {
+      announcementId: id,
+      kind: 'LINK',
+      url: normalized.url,
+      host: normalized.host,
+      title: data.title?.trim() ? data.title.trim() : null,
+    },
+    select: attachmentPublic,
+  });
+  res.status(201).json({ attachment });
+}
+
 export async function deleteAttachment(req: Request, res: Response): Promise<void> {
   const user = requireUser(req);
   const { attachmentId } = req.params as { attachmentId: string };
@@ -120,13 +198,17 @@ export async function deleteAttachment(req: Request, res: Response): Promise<voi
     throw new HttpError(403, 'Forbidden');
   }
   await prisma.announcementAttachment.delete({ where: { id: attachmentId } });
-  if (att.kind === 'IMAGE' && att.storedName) {
-    await safeUnlink(announcementImagePath(att.storedName));
+  if (att.storedName) {
+    if (att.kind === 'IMAGE') {
+      await safeUnlink(announcementImagePath(att.storedName));
+    } else if (att.kind === 'DOCUMENT') {
+      await safeUnlink(announcementDocPath(att.storedName));
+    }
   }
   res.status(204).end();
 }
 
-export async function downloadImage(req: Request, res: Response): Promise<void> {
+export async function downloadAttachment(req: Request, res: Response): Promise<void> {
   const user = requireUser(req);
   const { attachmentId } = req.params as { attachmentId: string };
   const att = await prisma.announcementAttachment.findUnique({
@@ -137,13 +219,20 @@ export async function downloadImage(req: Request, res: Response): Promise<void> 
     },
   });
   if (!att) throw new HttpError(404, 'Attachment not found');
-  if (att.kind !== 'IMAGE' || !att.storedName) throw new HttpError(400, 'Not an image attachment');
+  if (!att.storedName || (att.kind !== 'IMAGE' && att.kind !== 'DOCUMENT')) {
+    throw new HttpError(400, 'Attachment has no downloadable file');
+  }
   await ensureClassroomMember(user, att.announcement.classroomId);
 
   res.type(att.mimetype ?? 'application/octet-stream');
+  const disposition = att.kind === 'IMAGE' ? 'inline' : 'attachment';
   res.setHeader(
     'Content-Disposition',
-    `inline; filename="${sanitizeDownloadName(att.filename ?? 'image')}"`,
+    `${disposition}; filename="${sanitizeDownloadName(att.filename ?? 'file')}"`,
   );
-  res.sendFile(announcementImagePath(att.storedName));
+  res.sendFile(
+    att.kind === 'IMAGE'
+      ? announcementImagePath(att.storedName)
+      : announcementDocPath(att.storedName),
+  );
 }

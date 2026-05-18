@@ -15,6 +15,11 @@ export const addYoutubeSchema = z.object({
   url: z.string().trim().min(1),
 });
 
+export const addLinkSchema = z.object({
+  url: z.string().trim().min(1).max(2048),
+  title: z.string().trim().max(200).optional(),
+});
+
 export const commentSchema = z.object({
   body: z.string().trim().min(1, 'Comment is required').max(2000),
 });
@@ -22,6 +27,28 @@ export const commentSchema = z.object({
 export type CreateAnnouncementInput = z.infer<typeof createAnnouncementSchema>;
 export type UpdateAnnouncementInput = z.infer<typeof updateAnnouncementSchema>;
 export type CommentInput = z.infer<typeof commentSchema>;
+export type AddLinkInput = z.infer<typeof addLinkSchema>;
+
+/**
+ * Normalize a user-supplied URL: ensures a scheme (defaults to https://) and
+ * returns the parsed URL plus its hostname (lower-cased, no leading "www.").
+ * Returns null if the value is not a valid http/https URL.
+ */
+export function normalizeLink(raw: string): { url: string; host: string } | null {
+  const value = raw.trim();
+  if (!value) return null;
+  const withScheme = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+  let u: URL;
+  try {
+    u = new URL(withScheme);
+  } catch {
+    return null;
+  }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+  const host = u.hostname.toLowerCase().replace(/^www\./, '');
+  if (!host) return null;
+  return { url: u.toString(), host };
+}
 
 /**
  * Extract a YouTube video ID from common URL forms.

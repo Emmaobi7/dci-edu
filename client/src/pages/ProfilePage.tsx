@@ -28,7 +28,7 @@ type Form = {
   placeOfWork: string;
   positionAtWapcp: string;
   matriculationNumber: string;
-  subject: string;
+  topics: string;
 };
 
 function toForm(u: User | null): Form {
@@ -42,7 +42,7 @@ function toForm(u: User | null): Form {
     placeOfWork: u?.placeOfWork ?? '',
     positionAtWapcp: u?.positionAtWapcp ?? '',
     matriculationNumber: u?.matriculationNumber ?? '',
-    subject: u?.subject ?? '',
+    topics: u?.topics ?? '',
   };
 }
 
@@ -51,7 +51,7 @@ function diff(form: Form, base: Form, role: Role | undefined): ProfileUpdate {
   const allowed = new Set<keyof Form>(
     role === 'STUDENT'
       ? ['title', 'firstName', 'surname', 'phone', 'country', 'placeOfWork', 'positionAtWapcp', 'matriculationNumber']
-      : ['title', 'name', 'phone', 'country', 'subject'],
+      : ['title', 'name', 'phone', 'country', 'topics'],
   );
   (Object.keys(form) as Array<keyof Form>).forEach((k) => {
     if (allowed.has(k) && form[k] !== base[k]) out[k] = form[k];
@@ -186,7 +186,7 @@ export function ProfilePage() {
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium">Profile photo</div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                JPG, PNG, WEBP or GIF up to 2&nbsp;MB. Shown to teachers and classmates.
+                JPG, PNG, WEBP or GIF up to 2&nbsp;MB. Shown to faculty and classmates.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPickAvatar} />
@@ -245,10 +245,10 @@ export function ProfilePage() {
 
           {role === 'TEACHER' && (
             <Section icon={BookOpen} title="Teaching">
-              <Field label="Subject" htmlFor="subject">
-                <Input id="subject" value={form.subject} disabled={!canEdit} maxLength={80}
-                  onChange={(e) => set('subject', e.target.value)}
-                  placeholder="e.g. Pharmaceutical Chemistry" />
+              <Field label="Topics" htmlFor="topics">
+                <Input id="topics" value={form.topics} disabled={!canEdit} maxLength={200}
+                  onChange={(e) => set('topics', e.target.value)}
+                  placeholder="e.g. Pharmaceutical Chemistry, Pharmacology" />
               </Field>
             </Section>
           )}

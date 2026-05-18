@@ -6,6 +6,7 @@ import {
   deleteAttachment,
   downloadAttachment,
   getAssignment,
+  listMine,
   listMyUpcoming,
   updateAssignment,
   uploadAttachments,
@@ -23,6 +24,7 @@ const router = Router();
 router.use(requireAuth);
 
 router.get('/me/upcoming', asyncHandler(listMyUpcoming));
+router.get('/me/all', asyncHandler(listMine));
 router.get('/:id', asyncHandler(getAssignment));
 router.patch('/:id', asyncHandler(updateAssignment));
 router.delete('/:id', asyncHandler(deleteAssignment));

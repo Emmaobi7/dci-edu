@@ -14,6 +14,7 @@ export async function notifyClassroom(opts: {
   announcementId?: string;
   assignmentId?: string;
   quizId?: string;
+  eventId?: string;
 }): Promise<void> {
   try {
     const enrolments = await prisma.enrolment.findMany({
@@ -29,6 +30,7 @@ export async function notifyClassroom(opts: {
         announcementId: opts.announcementId,
         assignmentId: opts.assignmentId,
         quizId: opts.quizId,
+        eventId: opts.eventId,
         title: opts.title,
         body: opts.body ?? null,
       })),
@@ -36,6 +38,38 @@ export async function notifyClassroom(opts: {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.warn('notifyClassroom failed:', err);
+  }
+}
+
+/**
+ * Fan out a notification to every user in the system, excluding the actor.
+ * Used for admin-level global events.
+ */
+export async function notifyAllUsers(opts: {
+  actorId: string;
+  type: NotificationType;
+  title: string;
+  body?: string | null;
+  eventId?: string;
+}): Promise<void> {
+  try {
+    const users = await prisma.user.findMany({
+      where: { id: { not: opts.actorId } },
+      select: { id: true },
+    });
+    if (users.length === 0) return;
+    await prisma.notification.createMany({
+      data: users.map((u) => ({
+        userId: u.id,
+        type: opts.type,
+        eventId: opts.eventId,
+        title: opts.title,
+        body: opts.body ?? null,
+      })),
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('notifyAllUsers failed:', err);
   }
 }
 

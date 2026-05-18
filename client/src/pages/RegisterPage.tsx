@@ -57,7 +57,7 @@ export function RegisterPage() {
             </div>
           </div>
           <CardTitle>Create your account</CardTitle>
-          <CardDescription>Join Wapcharm Classroom as a student or teacher.</CardDescription>
+          <CardDescription>Join Wapcharm Classroom as a student or faculty member.</CardDescription>
         </CardHeader>
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           {role === 'STUDENT' ? (
@@ -121,7 +121,7 @@ export function RegisterPage() {
                       : 'bg-white/60 border-white/70 hover:bg-white/80',
                   )}
                 >
-                  {r === 'STUDENT' ? 'Student' : 'Teacher'}
+                  {r === 'STUDENT' ? 'Student' : 'Faculty'}
                 </button>
               ))}
             </div>

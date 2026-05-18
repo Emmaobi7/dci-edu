@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
-import { announcementImageUrl } from '@/lib/announcements';
+import { Download, ExternalLink, FileText, X } from 'lucide-react';
+import { announcementFileUrl, announcementImageUrl } from '@/lib/announcements';
 import type { AnnouncementAttachment } from '@/lib/types';
 import { YouTubeEmbed } from './YouTubeEmbed';
+
+function formatBytes(size: number | null | undefined): string | null {
+  if (!size || size <= 0) return null;
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export function AnnouncementMedia({ attachments }: { attachments: AnnouncementAttachment[] }) {
   const images = attachments.filter((a) => a.kind === 'IMAGE');
   const videos = attachments.filter((a) => a.kind === 'YOUTUBE' && a.youtubeId);
+  const documents = attachments.filter((a) => a.kind === 'DOCUMENT');
+  const links = attachments.filter((a) => a.kind === 'LINK' && a.url);
   const [lightbox, setLightbox] = useState<number | null>(null);
 
   useEffect(() => {
@@ -16,7 +25,9 @@ export function AnnouncementMedia({ attachments }: { attachments: AnnouncementAt
     return () => window.removeEventListener('keydown', onKey);
   }, [lightbox]);
 
-  if (images.length === 0 && videos.length === 0) return null;
+  if (images.length === 0 && videos.length === 0 && documents.length === 0 && links.length === 0) {
+    return null;
+  }
 
   const gridCls =
     images.length === 1 ? 'grid-cols-1'
@@ -50,6 +61,65 @@ export function AnnouncementMedia({ attachments }: { attachments: AnnouncementAt
             <YouTubeEmbed key={v.id} youtubeId={v.youtubeId as string} title={v.youtubeUrl} />
           ))}
         </div>
+      )}
+
+      {documents.length > 0 && (
+        <ul className="flex flex-col gap-1.5">
+          {documents.map((d) => {
+            const sizeLabel = formatBytes(d.size);
+            return (
+              <li key={d.id}>
+                <a
+                  href={announcementFileUrl(d.id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 rounded-xl border border-white/70 bg-white/60 backdrop-blur-md px-3 py-2 text-sm hover:bg-white/80 transition-colors"
+                >
+                  <span className="h-9 w-9 rounded-lg bg-brand/15 text-brand grid place-items-center shrink-0">
+                    <FileText className="h-4 w-4" />
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block truncate font-medium">{d.filename ?? 'Document'}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {sizeLabel ? `${sizeLabel} · ` : ''}Click to download
+                    </span>
+                  </span>
+                  <Download className="h-4 w-4 text-muted-foreground shrink-0" />
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {links.length > 0 && (
+        <ul className="flex flex-col gap-1.5">
+          {links.map((l) => {
+            const url = l.url ?? '';
+            const headline = l.title?.trim() || l.host || url;
+            const sub = l.title?.trim() ? (l.host ?? url) : url;
+            return (
+              <li key={l.id}>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 rounded-xl border border-white/70 bg-white/60 backdrop-blur-md px-3 py-2 text-sm hover:bg-white/80 transition-colors"
+                >
+                  <span className="h-9 w-9 rounded-lg bg-brand/15 text-brand grid place-items-center shrink-0">
+                    <ExternalLink className="h-4 w-4" />
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block truncate font-medium">{headline}</span>
+                    {sub && sub !== headline && (
+                      <span className="block text-xs text-muted-foreground truncate">{sub}</span>
+                    )}
+                  </span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
       )}
 
       {lightbox !== null && images[lightbox] && (

@@ -1,6 +1,6 @@
 import { api } from './api';
 import type {
-  Assignment, AssignmentAttachment, AssignmentDetail, Submission, UpcomingAssignment,
+  Assignment, AssignmentAttachment, AssignmentDetail, MyAssignment, Submission, UpcomingAssignment,
 } from './types';
 
 export async function listAssignments(classroomId: string): Promise<Assignment[]> {
@@ -18,6 +18,11 @@ export async function listMyUpcomingAssignments(limit = 5): Promise<UpcomingAssi
     params: { limit },
   });
   return data;
+}
+
+export async function listMyAssignments(): Promise<MyAssignment[]> {
+  const { data } = await api.get<{ assignments: MyAssignment[] }>('/assignments/me/all');
+  return data.assignments;
 }
 
 export async function getAssignment(id: string): Promise<AssignmentDetail> {

@@ -207,7 +207,7 @@ export function QuizBuilderDialog(props: Props) {
       }
       onSaved();
     } catch (err) {
-      setError(extractError(err) ?? 'Failed to save quiz');
+      setError(extractError(err) ?? 'Failed to save exam');
     } finally {
       setSubmitting(false);
     }
@@ -217,7 +217,7 @@ export function QuizBuilderDialog(props: Props) {
     <Dialog
       open={open}
       onClose={onClose}
-      title={props.mode === 'create' ? 'New quiz' : 'Edit quiz'}
+      title={props.mode === 'create' ? 'New exam' : 'Edit exam'}
       description="Auto-graded with binary scoring (all-or-nothing per question)."
       className="max-w-3xl"
     >
@@ -287,7 +287,7 @@ export function QuizBuilderDialog(props: Props) {
           <div className="flex gap-2">
             <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={submitting}>
-              {submitting ? 'Saving…' : props.mode === 'create' ? 'Create quiz' : 'Save changes'}
+              {submitting ? 'Saving…' : props.mode === 'create' ? 'Create exam' : 'Save changes'}
             </Button>
           </div>
         </div>

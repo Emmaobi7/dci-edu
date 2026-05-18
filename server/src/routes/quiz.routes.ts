@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth.js';
 import {
   deleteQuiz,
   getQuiz,
+  listMyQuizzes,
   updateQuiz,
 } from '../controllers/quiz.controller.js';
 import {
@@ -17,6 +18,8 @@ import {
 
 const router = Router();
 router.use(requireAuth);
+
+router.get('/me/all', asyncHandler(listMyQuizzes));
 
 router.get('/:id', asyncHandler(getQuiz));
 router.patch('/:id', asyncHandler(updateQuiz));

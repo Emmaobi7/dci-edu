@@ -1,6 +1,6 @@
 import { api } from './api';
 import type {
-  QuizAttemptInProgress, QuizAttemptResult, QuizAttemptRow,
+  MyQuiz, QuizAttemptInProgress, QuizAttemptResult, QuizAttemptRow,
   QuizDetail, QuizQuestionAuthor, QuizSummary,
 } from './types';
 
@@ -17,6 +17,11 @@ export interface QuizInput {
 
 export async function listQuizzes(classroomId: string): Promise<QuizSummary[]> {
   const { data } = await api.get<{ quizzes: QuizSummary[] }>(`/classrooms/${classroomId}/quizzes`);
+  return data.quizzes;
+}
+
+export async function listMyQuizzes(): Promise<MyQuiz[]> {
+  const { data } = await api.get<{ quizzes: MyQuiz[] }>('/quizzes/me/all');
   return data.quizzes;
 }
 

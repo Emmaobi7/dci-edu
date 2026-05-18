@@ -43,8 +43,8 @@ export function StudentsTable({ students }: { students: InsightStudentRow[] }) {
               <Th onClick={() => toggle('name')} active={sortKey === 'name'} dir={dir}>Student</Th>
               <Th onClick={() => toggle('assignments')} active={sortKey === 'assignments'} dir={dir}>Assignments</Th>
               <Th onClick={() => toggle('avgGrade')} active={sortKey === 'avgGrade'} dir={dir}>Avg grade</Th>
-              <Th onClick={() => toggle('quizzes')} active={sortKey === 'quizzes'} dir={dir}>Quizzes</Th>
-              <Th onClick={() => toggle('avgQuiz')} active={sortKey === 'avgQuiz'} dir={dir}>Avg quiz %</Th>
+              <Th onClick={() => toggle('quizzes')} active={sortKey === 'quizzes'} dir={dir}>Exams</Th>
+              <Th onClick={() => toggle('avgQuiz')} active={sortKey === 'avgQuiz'} dir={dir}>Avg exam %</Th>
               <Th onClick={() => toggle('missing')} active={sortKey === 'missing'} dir={dir}>Missing</Th>
             </tr>
           </thead>

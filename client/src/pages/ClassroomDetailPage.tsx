@@ -52,6 +52,7 @@ export function ClassroomDetailPage() {
   const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
 
   const isOwner = !!(classroom && user && (user.role === 'ADMIN' || user.id === classroom.teacherId));
+  const isAdmin = user?.role === 'ADMIN';
   const isStudentMember = !!(classroom && user?.role === 'STUDENT');
   const isCurrentModerator = !!(classroom && user && classroom.moderatorId === user.id);
   const canModerate = isOwner || isCurrentModerator;
@@ -193,7 +194,7 @@ export function ClassroomDetailPage() {
       { key: 'stream', label: 'Stream' },
       { key: 'overview', label: 'Overview' },
       { key: 'assignments', label: 'Assignments' },
-      { key: 'quizzes', label: 'Quizzes' },
+      { key: 'quizzes', label: 'Exams' },
       { key: 'chat', label: 'Chat' },
     ];
     if (isOwner) {
@@ -365,7 +366,7 @@ export function ClassroomDetailPage() {
                         {isMuted ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
                         {isMuted ? 'Unmute' : 'Mute'}
                       </Button>
-                      {isOwner && (
+                      {isAdmin && (
                         isMod ? (
                           <Button variant="ghost" size="sm" onClick={onDemote} title="Demote moderator">
                             <ShieldOff className="h-4 w-4" /> Demote

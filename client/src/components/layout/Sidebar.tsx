@@ -1,6 +1,19 @@
 import { NavLink } from 'react-router-dom';
-import { BookOpen, GraduationCap, LayoutDashboard, Users, Shield, UserCircle2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import {
+  Bell,
+  BookOpen,
+  CalendarDays,
+  ClipboardList,
+  GraduationCap,
+  LayoutDashboard,
+  LifeBuoy,
+  Library,
+  ScrollText,
+  Shield,
+  Users,
+  Video,
+} from 'lucide-react';
+import { cn, roleLabel } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 import type { Role } from '@/lib/types';
 
@@ -14,7 +27,13 @@ interface NavItem {
 const items: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/classes', label: 'Classes', icon: BookOpen },
-  { to: '/profile', label: 'Profile', icon: UserCircle2, roles: ['STUDENT', 'TEACHER'] },
+  { to: '/live-classes', label: 'Live Classes', icon: Video },
+  { to: '/notifications', label: 'Notifications', icon: Bell },
+  { to: '/assessment', label: 'Assessment', icon: ClipboardList },
+  { to: '/exams', label: 'Exams', icon: ScrollText },
+  { to: '/calendar', label: 'Calendar', icon: CalendarDays },
+  { to: '/resources', label: 'Resources', icon: Library },
+  { to: '/help', label: 'Help / Guard', icon: LifeBuoy },
   { to: '/students', label: 'Students', icon: GraduationCap, roles: ['TEACHER', 'ADMIN'] },
   { to: '/users', label: 'Users', icon: Users, roles: ['ADMIN'] },
   { to: '/admin', label: 'Admin', icon: Shield, roles: ['ADMIN'] },
@@ -59,7 +78,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         {user && (
           <div className="flex flex-col gap-0.5">
             <span className="font-medium text-foreground/80">{user.name}</span>
-            <span>{user.role.toLowerCase()}</span>
+            <span>{roleLabel(user.role)}</span>
           </div>
         )}
       </div>

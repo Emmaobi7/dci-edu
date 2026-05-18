@@ -95,7 +95,7 @@ export function StreamTab({ classroomId, viewerId, viewerRole, isOwner }: Props)
           <p className="text-sm text-muted-foreground mt-1">
             {canCompose
               ? 'Share an update so your class can see it.'
-              : 'Your teacher has not posted any updates yet.'}
+              : 'Your faculty has not posted any updates yet.'}
           </p>
         </Card>
       )}

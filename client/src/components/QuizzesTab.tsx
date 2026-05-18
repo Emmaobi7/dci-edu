@@ -22,7 +22,7 @@ export function QuizzesTab({
     try {
       setQuizzes(await listQuizzes(classroomId));
     } catch (err) {
-      setError(extractError(err) ?? 'Failed to load quizzes');
+      setError(extractError(err) ?? 'Failed to load exams');
     }
   }, [classroomId]);
 
@@ -31,10 +31,10 @@ export function QuizzesTab({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Quizzes</h2>
+        <h2 className="text-lg font-semibold">Exams</h2>
         {isOwner && (
           <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" /> New quiz
+            <Plus className="h-4 w-4" /> New exam
           </Button>
         )}
       </div>
@@ -46,13 +46,13 @@ export function QuizzesTab({
           <div className="mx-auto h-12 w-12 rounded-2xl bg-brand/15 text-brand grid place-items-center mb-3">
             <FileQuestion className="h-6 w-6" />
           </div>
-          <h3 className="font-semibold">No quizzes yet</h3>
+          <h3 className="font-semibold">No exams yet</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            {isOwner ? 'Build your first auto-graded quiz.' : 'Your teacher has not posted any quizzes.'}
+            {isOwner ? 'Build your first auto-graded exam.' : 'Your faculty has not posted any exams.'}
           </p>
           {isOwner && (
             <div className="mt-4">
-              <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" /> New quiz</Button>
+              <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" /> New exam</Button>
             </div>
           )}
         </Card>

@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { prisma } from '../db/prisma.js';
 import { HttpError } from '../utils/HttpError.js';
-import { ensureClassroomOwner, loadChatRole } from '../utils/classroomAuth.js';
+import { loadChatRole } from '../utils/classroomAuth.js';
 import { getIo, roomName } from '../socket/io.js';
 
 function requireUser(req: Request) {
@@ -57,8 +57,14 @@ export async function unmuteStudent(req: Request, res: Response): Promise<void> 
 
 export async function promoteModerator(req: Request, res: Response): Promise<void> {
   const user = requireUser(req);
+  if (user.role !== 'ADMIN') throw new HttpError(403, 'Only administrators can promote moderators');
   const { id: classroomId, studentId } = req.params as { id: string; studentId: string };
-  await ensureClassroomOwner(user, classroomId);
+
+  const classroom = await prisma.classroom.findUnique({
+    where: { id: classroomId },
+    select: { id: true },
+  });
+  if (!classroom) throw new HttpError(404, 'Classroom not found');
   await loadEnrolment(classroomId, studentId);
 
   const updated = await prisma.classroom.update({
@@ -74,8 +80,14 @@ export async function promoteModerator(req: Request, res: Response): Promise<voi
 
 export async function demoteModerator(req: Request, res: Response): Promise<void> {
   const user = requireUser(req);
+  if (user.role !== 'ADMIN') throw new HttpError(403, 'Only administrators can demote moderators');
   const { id: classroomId } = req.params as { id: string };
-  await ensureClassroomOwner(user, classroomId);
+
+  const classroom = await prisma.classroom.findUnique({
+    where: { id: classroomId },
+    select: { id: true },
+  });
+  if (!classroom) throw new HttpError(404, 'Classroom not found');
 
   const updated = await prisma.classroom.update({
     where: { id: classroomId },

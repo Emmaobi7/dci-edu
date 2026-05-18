@@ -25,7 +25,7 @@ export function TeacherAttemptPage() {
       <div className="flex flex-col gap-3">
         <div className="text-sm text-destructive">{error}</div>
         <Link to={`/classes/${classId}/quizzes/${quizId}`} className="text-sm text-brand hover:underline inline-flex items-center gap-1">
-          <ArrowLeft className="h-4 w-4" /> Back to quiz
+          <ArrowLeft className="h-4 w-4" /> Back to exam
         </Link>
       </div>
     );
@@ -36,7 +36,7 @@ export function TeacherAttemptPage() {
     <div className="flex flex-col gap-4">
       <div>
         <Link to={`/classes/${classId}/quizzes/${quizId}`} className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-          <ArrowLeft className="h-4 w-4" /> Back to quiz
+          <ArrowLeft className="h-4 w-4" /> Back to exam
         </Link>
         {result.student && (
           <h1 className="mt-3 text-2xl font-semibold tracking-tight">

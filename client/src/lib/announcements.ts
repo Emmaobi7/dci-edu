@@ -54,6 +54,20 @@ export async function uploadAnnouncementImages(
   return data.attachments;
 }
 
+export async function uploadAnnouncementDocuments(
+  announcementId: string,
+  files: File[],
+): Promise<AnnouncementAttachment[]> {
+  const form = new FormData();
+  for (const f of files) form.append('files', f);
+  const { data } = await api.post<{ attachments: AnnouncementAttachment[] }>(
+    `/announcements/${announcementId}/documents`,
+    form,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  );
+  return data.attachments;
+}
+
 export async function addYoutubeAttachment(
   announcementId: string,
   url: string,
@@ -65,11 +79,26 @@ export async function addYoutubeAttachment(
   return data.attachment;
 }
 
+export async function addLinkAttachment(
+  announcementId: string,
+  input: { url: string; title?: string },
+): Promise<AnnouncementAttachment> {
+  const { data } = await api.post<{ attachment: AnnouncementAttachment }>(
+    `/announcements/${announcementId}/links`,
+    input,
+  );
+  return data.attachment;
+}
+
 export async function deleteAnnouncementAttachment(attachmentId: string): Promise<void> {
   await api.delete(`/announcements/attachments/${attachmentId}`);
 }
 
 export function announcementImageUrl(attachmentId: string): string {
+  return `/api/announcements/attachments/${attachmentId}/file`;
+}
+
+export function announcementFileUrl(attachmentId: string): string {
   return `/api/announcements/attachments/${attachmentId}/file`;
 }
 

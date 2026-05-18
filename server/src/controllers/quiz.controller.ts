@@ -66,11 +66,53 @@ export async function createQuiz(req: Request, res: Response): Promise<void> {
     classroomId,
     actorId: user.id,
     type: 'QUIZ_NEW',
-    title: `New quiz: ${quiz.title}`,
+    title: `New exam: ${quiz.title}`,
     body: quiz.description ? truncatePreview(quiz.description) : null,
     quizId: quiz.id,
   });
   res.status(201).json({ quiz });
+}
+
+export async function listMyQuizzes(req: Request, res: Response): Promise<void> {
+  const user = requireUser(req);
+
+  if (user.role === 'STUDENT') {
+    const quizzes = await prisma.quiz.findMany({
+      where: { classroom: { enrolments: { some: { studentId: user.id } } } },
+      orderBy: [{ dueDate: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
+      select: {
+        ...quizSummarySelect,
+        classroom: { select: { id: true, name: true } },
+        attempts: {
+          where: { studentId: user.id },
+          select: { id: true, submittedAt: true, score: true, totalPoints: true, isLate: true },
+        },
+      },
+    });
+    const payload = quizzes.map((q) => {
+      const attempts = (q as unknown as { attempts: unknown[] }).attempts ?? [];
+      const myAttempt = attempts[0] ?? null;
+      const { attempts: _drop, ...rest } = q as unknown as { attempts: unknown[] } & typeof q;
+      void _drop;
+      return { ...rest, myAttempt };
+    });
+    res.json({ quizzes: payload });
+    return;
+  }
+
+  const where = user.role === 'ADMIN'
+    ? {}
+    : { classroom: { teacherId: user.id } };
+
+  const quizzes = await prisma.quiz.findMany({
+    where,
+    orderBy: [{ dueDate: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
+    select: {
+      ...quizSummarySelect,
+      classroom: { select: { id: true, name: true } },
+    },
+  });
+  res.json({ quizzes });
 }
 
 export async function listQuizzes(req: Request, res: Response): Promise<void> {

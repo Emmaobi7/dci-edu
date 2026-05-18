@@ -50,7 +50,7 @@ export function ChatRolePill({ role, className = '' }: { role: ChatRole; classNa
     ? 'bg-brand/15 text-brand'
     : 'bg-brand-300/15 text-brand-300';
   const Icon = role === 'teacher' ? Crown : Shield;
-  const label = role === 'teacher' ? 'Teacher' : 'Moderator';
+  const label = role === 'teacher' ? 'Faculty' : 'Moderator';
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${tone} ${className}`}>
       <Icon className="h-2.5 w-2.5" />

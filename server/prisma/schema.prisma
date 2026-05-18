@@ -32,7 +32,7 @@ model User {
   placeOfWork          String?
   positionAtWapcp      String?
   matriculationNumber  String? @unique
-  subject              String?
+  topics               String?
   avatarStoredName     String?
   avatarMimetype       String?
 
@@ -49,6 +49,7 @@ model User {
   quizAttempts      QuizAttempt[]
   sentMessages      Message[]             @relation("MessageSender")
   deletedMessages   Message[]             @relation("MessageDeleter")
+  createdEvents     Event[]               @relation("EventAuthor")
 
   @@index([role])
 }
@@ -68,6 +69,7 @@ model Classroom {
   notifications Notification[]
   quizzes     Quiz[]
   messages    Message[]
+  events      Event[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -168,6 +170,8 @@ model Submission {
 enum AttachmentKind {
   IMAGE
   YOUTUBE
+  DOCUMENT
+  LINK
 }
 
 enum NotificationType {
@@ -175,6 +179,12 @@ enum NotificationType {
   ASSIGNMENT_NEW
   COMMENT_NEW
   QUIZ_NEW
+  EVENT_NEW
+}
+
+enum EventType {
+  EVENT
+  CLASS_SESSION
 }
 
 model Announcement {
@@ -201,7 +211,7 @@ model AnnouncementAttachment {
   announcementId String
   kind           AttachmentKind
 
-  // For IMAGE
+  // For IMAGE and DOCUMENT
   filename       String?
   storedName     String?
   mimetype       String?
@@ -210,6 +220,11 @@ model AnnouncementAttachment {
   // For YOUTUBE
   youtubeId      String?
   youtubeUrl     String?
+
+  // For LINK (and mirrored for YOUTUBE)
+  url            String?
+  title          String?
+  host           String?
 
   createdAt      DateTime       @default(now())
 
@@ -241,6 +256,7 @@ model Notification {
   announcementId String?
   assignmentId   String?
   quizId         String?
+  eventId        String?
   title          String
   body           String?
   readAt         DateTime?
@@ -251,9 +267,32 @@ model Notification {
   announcement   Announcement?    @relation(fields: [announcementId], references: [id], onDelete: Cascade)
   assignment     Assignment?      @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   quiz           Quiz?            @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  event          Event?           @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt])
   @@index([userId, createdAt])
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  type        EventType @default(EVENT)
+  title       String
+  description String?
+  location    String?
+  startsAt    DateTime
+  endsAt      DateTime?
+  classroomId String?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  classroom     Classroom?     @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  createdBy     User           @relation("EventAuthor", fields: [createdById], references: [id], onDelete: Cascade)
+  notifications Notification[]
+
+  @@index([classroomId, startsAt])
+  @@index([startsAt])
+  @@index([createdById])
 }
 
 model Quiz {

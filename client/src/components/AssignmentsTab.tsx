@@ -49,7 +49,7 @@ export function AssignmentsTab({
           </div>
           <h3 className="font-semibold">No assignments yet</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            {isOwner ? 'Create your first assignment for this class.' : 'Your teacher has not posted any assignments.'}
+            {isOwner ? 'Create your first assignment for this class.' : 'Your faculty has not posted any assignments.'}
           </p>
           {isOwner && (
             <div className="mt-4">

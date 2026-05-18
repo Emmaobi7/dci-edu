@@ -9,6 +9,7 @@ import assignmentRoutes from './routes/assignment.routes.js';
 import announcementRoutes from './routes/announcement.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import quizRoutes from './routes/quiz.routes.js';
+import eventRoutes from './routes/event.routes.js';
 import meRoutes from './routes/me.routes.js';
 import messageRoutes from './routes/message.routes.js';
 import usersRoutes from './routes/users.routes.js';
@@ -37,6 +38,7 @@ export function createApp() {
   app.use('/api/announcements', announcementRoutes);
   app.use('/api/notifications', notificationRoutes);
   app.use('/api/quizzes', quizRoutes);
+  app.use('/api/events', eventRoutes);
   app.use('/api/me', meRoutes);
   app.use('/api/messages', messageRoutes);
   app.use('/api/users', usersRoutes);

@@ -27,7 +27,7 @@ export const updateProfileSchema = z.object({
   placeOfWork: nullableTrimmed(120),
   positionAtWapcp: nullableTrimmed(100),
   matriculationNumber: nullableTrimmed(40),
-  subject: nullableTrimmed(80),
+  topics: nullableTrimmed(200),
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
@@ -39,5 +39,5 @@ export const STUDENT_PROFILE_FIELDS = [
 ] as const;
 
 export const TEACHER_PROFILE_FIELDS = [
-  'title', 'name', 'phone', 'country', 'subject',
+  'title', 'name', 'phone', 'country', 'topics',
 ] as const;

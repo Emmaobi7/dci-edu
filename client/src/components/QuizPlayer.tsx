@@ -186,7 +186,7 @@ export function QuizPlayer({ quizId, attempt, onSubmitted }: Props) {
             >Next <ChevronRight className="h-4 w-4" /></Button>
           ) : (
             <Button type="button" onClick={() => submit(false)} disabled={submitting}>
-              <Send className="h-4 w-4" /> {submitting ? 'Submitting…' : 'Submit quiz'}
+              <Send className="h-4 w-4" /> {submitting ? 'Submitting…' : 'Submit exam'}
             </Button>
           )}
         </div>

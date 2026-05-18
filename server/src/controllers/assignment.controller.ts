@@ -97,6 +97,52 @@ export async function listMyUpcoming(req: Request, res: Response): Promise<void>
   res.json({ assignments: items, totalPending });
 }
 
+export async function listMine(req: Request, res: Response): Promise<void> {
+  const user = requireUser(req);
+
+  if (user.role === 'STUDENT') {
+    const assignments = await prisma.assignment.findMany({
+      where: { classroom: { enrolments: { some: { studentId: user.id } } } },
+      orderBy: [{ dueDate: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
+      select: {
+        id: true, title: true, description: true, dueDate: true,
+        classroomId: true, createdAt: true, updatedAt: true,
+        classroom: { select: { id: true, name: true } },
+        submissions: {
+          where: { studentId: user.id },
+          select: { id: true, grade: true, feedback: true, gradedAt: true, isLate: true, submittedAt: true },
+        },
+        _count: { select: { submissions: true } },
+      },
+    });
+    const payload = assignments.map((a) => {
+      const mine = a.submissions[0] ?? null;
+      const { submissions: _drop, ...rest } = a;
+      void _drop;
+      return { ...rest, mySubmission: mine };
+    });
+    res.json({ assignments: payload });
+    return;
+  }
+
+  // Faculty / Admin: assignments across all classes they own (admins see all).
+  const where = user.role === 'ADMIN'
+    ? {}
+    : { classroom: { teacherId: user.id } };
+
+  const assignments = await prisma.assignment.findMany({
+    where,
+    orderBy: [{ dueDate: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
+    select: {
+      id: true, title: true, description: true, dueDate: true,
+      classroomId: true, createdAt: true, updatedAt: true,
+      classroom: { select: { id: true, name: true } },
+      _count: { select: { submissions: true } },
+    },
+  });
+  res.json({ assignments });
+}
+
 export async function listAssignments(req: Request, res: Response): Promise<void> {
   const user = requireUser(req);
   const { id: classroomId } = req.params as { id: string };

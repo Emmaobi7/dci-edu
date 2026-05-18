@@ -13,6 +13,12 @@ import { NotificationsPage } from '@/pages/NotificationsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { QuizDetailPage } from '@/pages/QuizDetailPage';
 import { TeacherAttemptPage } from '@/pages/TeacherAttemptPage';
+import { LiveClassesPage } from '@/pages/LiveClassesPage';
+import { AssessmentPage } from '@/pages/AssessmentPage';
+import { ExamsPage } from '@/pages/ExamsPage';
+import { CalendarPage } from '@/pages/CalendarPage';
+import { ResourcesPage } from '@/pages/ResourcesPage';
+import { HelpPage } from '@/pages/HelpPage';
 
 export default function App() {
   return (
@@ -34,6 +40,12 @@ export default function App() {
               <Route path="/classes/:classId/quizzes/:id/attempts/:attemptId" element={<TeacherAttemptPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/live-classes" element={<LiveClassesPage />} />
+              <Route path="/assessment" element={<AssessmentPage />} />
+              <Route path="/exams" element={<ExamsPage />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/resources" element={<ResourcesPage />} />
+              <Route path="/help" element={<HelpPage />} />
             </Route>
           </Route>
 

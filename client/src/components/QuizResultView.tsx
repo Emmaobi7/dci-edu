@@ -63,7 +63,7 @@ export function QuizResultView({ result, backTo, backLabel = 'Back to class' }: 
                   })}
                 </ul>
                 {!result.showAnswers && (
-                  <p className="mt-2 text-xs text-muted-foreground">Your teacher has hidden the correct answers.</p>
+                  <p className="mt-2 text-xs text-muted-foreground">Your faculty has hidden the correct answers.</p>
                 )}
               </div>
             </div>

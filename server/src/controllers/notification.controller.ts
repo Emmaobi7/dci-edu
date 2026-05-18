@@ -16,6 +16,7 @@ const notificationSelect = {
   announcementId: true,
   assignmentId: true,
   quizId: true,
+  eventId: true,
   readAt: true,
   createdAt: true,
   classroom: { select: { id: true, name: true } },

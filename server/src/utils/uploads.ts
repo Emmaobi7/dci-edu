@@ -25,8 +25,23 @@ const ALLOWED_IMAGE_EXTENSIONS = new Set<string>([
   '.jpg', '.jpeg', '.png', '.webp', '.gif',
 ]);
 
+const ALLOWED_DOC_MIMETYPES = new Set<string>([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+]);
+
+const ALLOWED_DOC_EXTENSIONS = new Set<string>([
+  '.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx',
+]);
+
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+const MAX_ANNOUNCEMENT_DOC_BYTES = 20 * 1024 * 1024;
 
 export const UPLOAD_ROOT = path.isAbsolute(env.UPLOAD_DIR)
   ? env.UPLOAD_DIR
@@ -35,6 +50,7 @@ export const UPLOAD_ROOT = path.isAbsolute(env.UPLOAD_DIR)
 export const ATTACHMENTS_DIR = path.join(UPLOAD_ROOT, 'attachments');
 export const SUBMISSIONS_DIR = path.join(UPLOAD_ROOT, 'submissions');
 export const ANNOUNCEMENT_IMAGES_DIR = path.join(UPLOAD_ROOT, 'announcement-images');
+export const ANNOUNCEMENT_DOCS_DIR = path.join(UPLOAD_ROOT, 'announcement-docs');
 export const AVATARS_DIR = path.join(UPLOAD_ROOT, 'avatars');
 
 async function ensureDir(dir: string): Promise<void> {
@@ -59,6 +75,15 @@ function imageFilter(_req: Request, file: Express.Multer.File, cb: FileFilterCal
   const ext = path.extname(file.originalname).toLowerCase();
   if (!ALLOWED_IMAGE_MIMETYPES.has(file.mimetype) || !ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
     cb(new HttpError(400, 'Only JPG, PNG, WEBP, or GIF images are allowed'));
+    return;
+  }
+  cb(null, true);
+}
+
+function documentFilter(_req: Request, file: Express.Multer.File, cb: FileFilterCallback): void {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (!ALLOWED_DOC_MIMETYPES.has(file.mimetype) || !ALLOWED_DOC_EXTENSIONS.has(ext)) {
+    cb(new HttpError(400, 'Only PDF, Word, PowerPoint, or Excel documents are allowed'));
     return;
   }
   cb(null, true);
@@ -100,6 +125,12 @@ export const announcementImageUpload = multer({
   fileFilter: imageFilter,
 });
 
+export const announcementDocUpload = multer({
+  storage: buildStorage(ANNOUNCEMENT_DOCS_DIR),
+  limits: { fileSize: MAX_ANNOUNCEMENT_DOC_BYTES, files: 10 },
+  fileFilter: documentFilter,
+});
+
 export const avatarUpload = multer({
   storage: buildStorage(AVATARS_DIR),
   limits: { fileSize: MAX_AVATAR_BYTES, files: 1 },
@@ -116,6 +147,10 @@ export function submissionPath(storedName: string): string {
 
 export function announcementImagePath(storedName: string): string {
   return path.join(ANNOUNCEMENT_IMAGES_DIR, storedName);
+}
+
+export function announcementDocPath(storedName: string): string {
+  return path.join(ANNOUNCEMENT_DOCS_DIR, storedName);
 }
 
 export function avatarPath(storedName: string): string {

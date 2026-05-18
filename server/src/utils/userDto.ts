@@ -13,7 +13,7 @@ export const userDtoSelect = {
   placeOfWork: true,
   positionAtWapcp: true,
   matriculationNumber: true,
-  subject: true,
+  topics: true,
   avatarStoredName: true,
 } as const;
 
@@ -30,7 +30,7 @@ export interface UserRecord {
   placeOfWork: string | null;
   positionAtWapcp: string | null;
   matriculationNumber: string | null;
-  subject: string | null;
+  topics: string | null;
   avatarStoredName: string | null;
 }
 
@@ -47,7 +47,7 @@ export interface UserDto {
   placeOfWork: string | null;
   positionAtWapcp: string | null;
   matriculationNumber: string | null;
-  subject: string | null;
+  topics: string | null;
   avatarUrl: string | null;
 }
 
@@ -65,7 +65,7 @@ export function toUserDto(u: UserRecord): UserDto {
     placeOfWork: u.placeOfWork,
     positionAtWapcp: u.positionAtWapcp,
     matriculationNumber: u.matriculationNumber,
-    subject: u.subject,
+    topics: u.topics,
     avatarUrl: u.avatarStoredName ? `/users/${u.id}/avatar` : null,
   };
 }

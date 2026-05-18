@@ -46,7 +46,7 @@ export function StudentProgressSection() {
         <Card>
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="h-4 w-4 text-brand" />
-            <h3 className="font-semibold">Avg grade & quiz score by class</h3>
+            <h3 className="font-semibold">Avg grade & exam score by class</h3>
           </div>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -54,9 +54,9 @@ export function StudentProgressSection() {
                 <CartesianGrid stroke="rgba(0,0,0,0.06)" vertical={false} />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-                <Tooltip cursor={{ fill: 'rgba(198,103,38,0.08)' }} formatter={(v, k) => [`${Number(v ?? 0)}%`, k === 'grade' ? 'Avg grade' : 'Avg quiz']} />
+                <Tooltip cursor={{ fill: 'rgba(198,103,38,0.08)' }} formatter={(v, k) => [`${Number(v ?? 0)}%`, k === 'grade' ? 'Avg grade' : 'Avg exam']} />
                 <Bar dataKey="grade" fill={BRAND} radius={[6, 6, 0, 0]} name="Avg grade" />
-                <Bar dataKey="quiz" fill="#E2853B" radius={[6, 6, 0, 0]} name="Avg quiz" />
+                <Bar dataKey="quiz" fill="#E2853B" radius={[6, 6, 0, 0]} name="Avg exam" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -89,7 +89,7 @@ function ProgressCard({ c }: { c: MyInsightClass }) {
 
         <div className="mt-4 space-y-3">
           <Progress label="Assignments" submitted={c.assignmentsSubmitted} total={c.assignmentsTotal} pct={aPct} />
-          <Progress label="Quizzes" submitted={c.quizzesSubmitted} total={c.quizzesTotal} pct={qPct} />
+          <Progress label="Exams" submitted={c.quizzesSubmitted} total={c.quizzesTotal} pct={qPct} />
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
@@ -102,7 +102,7 @@ function ProgressCard({ c }: { c: MyInsightClass }) {
           )}
           {c.quizzesSubmitted > 0 && (
             <span className="inline-flex items-center rounded-full bg-foreground/5 text-foreground/80 px-2 py-0.5 font-medium">
-              Quiz {c.avgQuizPercent}%
+              Exam {c.avgQuizPercent}%
             </span>
           )}
           {c.pendingCount > 0 && (
