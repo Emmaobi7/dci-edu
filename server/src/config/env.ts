@@ -11,6 +11,9 @@ const EnvSchema = z.object({
   CLIENT_ORIGIN: z.string().url().default('http://localhost:5173'),
   UPLOAD_DIR: z.string().default('uploads'),
   MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(10 * 1024 * 1024),
+  BOOTSTRAP_ADMIN_EMAIL: z.string().trim().toLowerCase().email().optional(),
+  BOOTSTRAP_ADMIN_PASSWORD: z.string().min(8).max(128).optional(),
+  BOOTSTRAP_ADMIN_NAME: z.string().trim().min(1).max(100).optional(),
 });
 
 const parsed = EnvSchema.safeParse(process.env);

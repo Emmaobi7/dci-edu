@@ -2,10 +2,16 @@ import http from 'http';
 import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { initSocket } from './socket/io.js';
+import { bootstrapAdmin } from './bootstrap/admin.js';
 
 const app = createApp();
 const server = http.createServer(app);
 initSocket(server);
+
+bootstrapAdmin().catch((err) => {
+  // eslint-disable-next-line no-console
+  console.error('[bootstrap] admin bootstrap failed', err);
+});
 
 server.listen(env.PORT, () => {
   // eslint-disable-next-line no-console

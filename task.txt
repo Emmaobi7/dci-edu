@@ -4,13 +4,18 @@ app must be beautiful responsive and feel like glass and have amazing ui/ux
 
 
 
-. Students Profile fields: 
-•	Title
-•	Name
-•	Surname
-•	Email address
-•	Phone number
-•	Country of resident 
-•	Place of work
-•	Position held at WAPCP
-•	Matriculation number
+Admin fills form (title, date, time, class)
+        ↓
+Your backend calls Google Meet API → creates a space
+        ↓
+Returns meetingUri (e.g. meet.google.com/abc-xyz-123)
+        ↓
+Saved to your DB alongside the scheduled class
+        ↓
+Students see "Join Live Class" button on their dashboard
+        ↓
+Button opens the Meet link in a new tab
+        ↓
+After class → your backend polls/webhooks for the recording
+        ↓
+Recording saved to your DB (stored on organizer's Google Drive)

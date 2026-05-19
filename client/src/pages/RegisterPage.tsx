@@ -5,21 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
-
-type SelectableRole = 'STUDENT' | 'TEACHER';
 
 export function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const [name, setName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [surname, setSurname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<SelectableRole>('STUDENT');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -28,11 +23,7 @@ export function RegisterPage() {
     setError(null);
     setSubmitting(true);
     try {
-      if (role === 'STUDENT') {
-        await register({ role, firstName, surname, email, password });
-      } else {
-        await register({ role, name, email, password });
-      }
+      await register({ firstName, surname, email, password });
       navigate('/dashboard', { replace: true });
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -56,39 +47,34 @@ export function RegisterPage() {
               <span className="text-[11px] text-muted-foreground">West African Postgraduate College of Pharmacists</span>
             </div>
           </div>
-          <CardTitle>Create your account</CardTitle>
-          <CardDescription>Join Wapcharm Classroom as a student or faculty member.</CardDescription>
+          <CardTitle>Create your student account</CardTitle>
+          <CardDescription>
+            Sign up as a student. Faculty accounts are created by an administrator.
+          </CardDescription>
         </CardHeader>
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          {role === 'STUDENT' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="firstName">First name</Label>
-                <Input
-                  id="firstName"
-                  required
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  autoComplete="given-name"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="surname">Surname</Label>
-                <Input
-                  id="surname"
-                  required
-                  value={surname}
-                  onChange={(e) => setSurname(e.target.value)}
-                  autoComplete="family-name"
-                />
-              </div>
-            </div>
-          ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="name">Full name</Label>
-              <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+              <Label htmlFor="firstName">First name</Label>
+              <Input
+                id="firstName"
+                required
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                autoComplete="given-name"
+              />
             </div>
-          )}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="surname">Surname</Label>
+              <Input
+                id="surname"
+                required
+                value={surname}
+                onChange={(e) => setSurname(e.target.value)}
+                autoComplete="family-name"
+              />
+            </div>
+          </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
@@ -105,26 +91,6 @@ export function RegisterPage() {
               autoComplete="new-password"
             />
             <span className="text-xs text-muted-foreground">At least 8 characters.</span>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>I am a</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {(['STUDENT', 'TEACHER'] as const).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRole(r)}
-                  className={cn(
-                    'rounded-xl px-3 py-2 text-sm font-medium border transition-all',
-                    role === r
-                      ? 'bg-brand text-white border-brand shadow-glass-lg'
-                      : 'bg-white/60 border-white/70 hover:bg-white/80',
-                  )}
-                >
-                  {r === 'STUDENT' ? 'Student' : 'Faculty'}
-                </button>
-              ))}
-            </div>
           </div>
           {error && <div className="text-sm text-destructive">{error}</div>}
           <Button type="submit" disabled={submitting} className="mt-2">

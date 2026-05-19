@@ -2,9 +2,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { api } from './api';
 import type { User } from './types';
 
-type RegisterInput =
-  | { role: 'TEACHER'; name: string; email: string; password: string }
-  | { role: 'STUDENT'; firstName: string; surname: string; email: string; password: string };
+type RegisterInput = {
+  firstName: string;
+  surname: string;
+  email: string;
+  password: string;
+};
 
 interface AuthState {
   user: User | null;

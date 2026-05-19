@@ -19,6 +19,8 @@ import { ExamsPage } from '@/pages/ExamsPage';
 import { CalendarPage } from '@/pages/CalendarPage';
 import { ResourcesPage } from '@/pages/ResourcesPage';
 import { HelpPage } from '@/pages/HelpPage';
+import { UsersPage } from '@/pages/UsersPage';
+import { AdminPage } from '@/pages/AdminPage';
 
 export default function App() {
   return (
@@ -46,6 +48,10 @@ export default function App() {
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/resources" element={<ResourcesPage />} />
               <Route path="/help" element={<HelpPage />} />
+              <Route element={<ProtectedRoute roles={['ADMIN']} />}>
+                <Route path="/users" element={<UsersPage />} />
+                <Route path="/admin" element={<AdminPage />} />
+              </Route>
             </Route>
           </Route>
 

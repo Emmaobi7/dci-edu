@@ -9,25 +9,22 @@ import { toUserDto, userDtoSelect } from '../utils/userDto.js';
 
 export async function register(req: Request, res: Response): Promise<void> {
   const data = registerSchema.parse(req.body);
-  const { email, password, role } = data;
+  const { email, password, firstName, surname } = data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw new HttpError(409, 'Email already registered');
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const name =
-    role === 'STUDENT'
-      ? `${data.firstName} ${data.surname}`.replace(/\s+/g, ' ').trim()
-      : (data.name as string);
+  const name = `${firstName} ${surname}`.replace(/\s+/g, ' ').trim();
 
   const user = await prisma.user.create({
     data: {
       name,
       email,
       passwordHash,
-      role,
-      firstName: role === 'STUDENT' ? data.firstName : null,
-      surname: role === 'STUDENT' ? data.surname : null,
+      role: 'STUDENT',
+      firstName,
+      surname,
     },
     select: userDtoSelect,
   });
