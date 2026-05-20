@@ -43,6 +43,10 @@ export async function login(req: Request, res: Response): Promise<void> {
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) throw new HttpError(401, 'Invalid email or password');
 
+  if (user.disabledAt) {
+    throw new HttpError(403, 'This account has been suspended. Contact an administrator.');
+  }
+
   const token = signToken({ sub: user.id, role: user.role });
   res.cookie(AUTH_COOKIE, token, authCookieOptions);
   res.json({ user: toUserDto(user) });

@@ -21,6 +21,8 @@ import { ResourcesPage } from '@/pages/ResourcesPage';
 import { HelpPage } from '@/pages/HelpPage';
 import { UsersPage } from '@/pages/UsersPage';
 import { AdminPage } from '@/pages/AdminPage';
+import { AdminClassesPage } from '@/pages/AdminClassesPage';
+import { AuditPage } from '@/pages/AuditPage';
 
 export default function App() {
   return (
@@ -51,6 +53,8 @@ export default function App() {
               <Route element={<ProtectedRoute roles={['ADMIN']} />}>
                 <Route path="/users" element={<UsersPage />} />
                 <Route path="/admin" element={<AdminPage />} />
+                <Route path="/admin/classes" element={<AdminClassesPage />} />
+                <Route path="/admin/audit" element={<AuditPage />} />
               </Route>
             </Route>
           </Route>

@@ -9,6 +9,10 @@ export const listUsersQuerySchema = z.object({
   role: z.enum(['STUDENT', 'TEACHER', 'ADMIN']).optional(),
 });
 
+export const resetUserPasswordSchema = z.object({
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128),
+});
+
 export const adminCreateUserSchema = z
   .object({
     role: z.enum(['STUDENT', 'TEACHER', 'ADMIN']),

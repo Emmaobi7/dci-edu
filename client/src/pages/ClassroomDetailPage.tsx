@@ -253,17 +253,19 @@ export function ClassroomDetailPage() {
         {actionError && <div className="mt-3 text-sm text-destructive">{actionError}</div>}
       </div>
 
-      <div className="flex gap-2 border-b border-foreground/10">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setTab(t.key)}
-            className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              tab === t.key ? 'border-brand text-brand' : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >{t.label}</button>
-        ))}
+      <div className="border-b border-foreground/10 -mx-3 sm:mx-0">
+        <div className="flex gap-2 overflow-x-auto px-3 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              className={`shrink-0 whitespace-nowrap px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                tab === t.key ? 'border-brand text-brand' : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >{t.label}</button>
+          ))}
+        </div>
       </div>
 
       {tab === 'stream' && user && (

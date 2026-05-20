@@ -6,6 +6,7 @@ export interface AdminUser {
   email: string;
   name: string;
   role: Role;
+  disabledAt: string | null;
   firstName: string | null;
   surname: string | null;
   title: string | null;
@@ -46,4 +47,31 @@ export type AdminCreateUserInput =
 export async function adminCreateUser(input: AdminCreateUserInput): Promise<AdminUser> {
   const { data } = await api.post<{ user: AdminUser }>('/users', input);
   return data.user;
+}
+
+export async function resetUserPassword(id: string, password: string): Promise<void> {
+  await api.post(`/users/${id}/password`, { password });
+}
+
+export async function disableUser(id: string): Promise<AdminUser> {
+  const { data } = await api.post<{ user: AdminUser }>(`/users/${id}/disable`);
+  return data.user;
+}
+
+export async function enableUser(id: string): Promise<AdminUser> {
+  const { data } = await api.post<{ user: AdminUser }>(`/users/${id}/enable`);
+  return data.user;
+}
+
+export interface ImportSummary {
+  created: number;
+  skipped: number;
+  errors: { row: number; email?: string; message: string }[];
+}
+
+export async function importUsersCsv(file: File): Promise<ImportSummary> {
+  const fd = new FormData();
+  fd.append('file', file);
+  const { data } = await api.post<ImportSummary>('/users/import', fd);
+  return data;
 }

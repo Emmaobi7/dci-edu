@@ -6,6 +6,7 @@ import {
   createClassroomSchema,
   updateClassroomSchema,
 } from '../schemas/classroom.schema.js';
+import { writeAudit } from '../utils/audit.js';
 
 const classroomPublicSelect = {
   id: true,
@@ -127,6 +128,16 @@ export async function deleteClassroom(req: Request, res: Response): Promise<void
   if (!isOwnerOrAdmin(user, classroom.teacherId)) throw new HttpError(403, 'Forbidden');
 
   await prisma.classroom.delete({ where: { id } });
+
+  await writeAudit({
+    action: 'CLASSROOM_DELETED',
+    actorId: user.id,
+    targetType: 'Classroom',
+    targetId: id,
+    summary: `Deleted class "${classroom.name}" (${classroom.code})`,
+    metadata: { name: classroom.name, code: classroom.code, teacherId: classroom.teacherId },
+  });
+
   res.status(204).end();
 }
 

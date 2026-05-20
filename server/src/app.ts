@@ -13,6 +13,8 @@ import eventRoutes from './routes/event.routes.js';
 import meRoutes from './routes/me.routes.js';
 import messageRoutes from './routes/message.routes.js';
 import usersRoutes from './routes/users.routes.js';
+import adminRoutes from './routes/admin.routes.js';
+import resourceRoutes from './routes/resource.routes.js';
 import { errorHandler, notFound } from './middleware/error.js';
 
 export function createApp() {
@@ -42,6 +44,8 @@ export function createApp() {
   app.use('/api/me', meRoutes);
   app.use('/api/messages', messageRoutes);
   app.use('/api/users', usersRoutes);
+  app.use('/api/admin', adminRoutes);
+  app.use('/api/resources', resourceRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

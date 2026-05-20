@@ -5,6 +5,7 @@ export const userDtoSelect = {
   email: true,
   name: true,
   role: true,
+  disabledAt: true,
   firstName: true,
   surname: true,
   title: true,
@@ -22,6 +23,7 @@ export interface UserRecord {
   email: string;
   name: string;
   role: Role;
+  disabledAt: Date | null;
   firstName: string | null;
   surname: string | null;
   title: string | null;
@@ -39,6 +41,7 @@ export interface UserDto {
   email: string;
   name: string;
   role: Role;
+  disabledAt: string | null;
   firstName: string | null;
   surname: string | null;
   title: string | null;
@@ -57,6 +60,7 @@ export function toUserDto(u: UserRecord): UserDto {
     email: u.email,
     name: u.name,
     role: u.role,
+    disabledAt: u.disabledAt ? u.disabledAt.toISOString() : null,
     firstName: u.firstName,
     surname: u.surname,
     title: u.title,

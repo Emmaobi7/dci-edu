@@ -51,6 +51,7 @@ export const ATTACHMENTS_DIR = path.join(UPLOAD_ROOT, 'attachments');
 export const SUBMISSIONS_DIR = path.join(UPLOAD_ROOT, 'submissions');
 export const ANNOUNCEMENT_IMAGES_DIR = path.join(UPLOAD_ROOT, 'announcement-images');
 export const ANNOUNCEMENT_DOCS_DIR = path.join(UPLOAD_ROOT, 'announcement-docs');
+export const RESOURCE_DOCS_DIR = path.join(UPLOAD_ROOT, 'resource-docs');
 export const AVATARS_DIR = path.join(UPLOAD_ROOT, 'avatars');
 
 async function ensureDir(dir: string): Promise<void> {
@@ -131,10 +132,33 @@ export const announcementDocUpload = multer({
   fileFilter: documentFilter,
 });
 
+export const resourceDocUpload = multer({
+  storage: buildStorage(RESOURCE_DOCS_DIR),
+  limits: { fileSize: MAX_ANNOUNCEMENT_DOC_BYTES, files: 10 },
+  fileFilter: documentFilter,
+});
+
 export const avatarUpload = multer({
   storage: buildStorage(AVATARS_DIR),
   limits: { fileSize: MAX_AVATAR_BYTES, files: 1 },
   fileFilter: imageFilter,
+});
+
+export const csvUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const okMime = file.mimetype === 'text/csv'
+      || file.mimetype === 'application/vnd.ms-excel'
+      || file.mimetype === 'application/csv'
+      || file.mimetype === 'text/plain';
+    if (!okMime && ext !== '.csv') {
+      cb(new HttpError(400, 'Only CSV files are allowed'));
+      return;
+    }
+    cb(null, true);
+  },
 });
 
 export function attachmentPath(storedName: string): string {
@@ -151,6 +175,10 @@ export function announcementImagePath(storedName: string): string {
 
 export function announcementDocPath(storedName: string): string {
   return path.join(ANNOUNCEMENT_DOCS_DIR, storedName);
+}
+
+export function resourceDocPath(storedName: string): string {
+  return path.join(RESOURCE_DOCS_DIR, storedName);
 }
 
 export function avatarPath(storedName: string): string {

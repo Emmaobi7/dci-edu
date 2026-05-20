@@ -4,10 +4,12 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardList,
+  FileSpreadsheet,
   GraduationCap,
   LayoutDashboard,
   LifeBuoy,
   Library,
+  School,
   ScrollText,
   Shield,
   Users,
@@ -22,6 +24,7 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   roles?: Role[];
+  end?: boolean;
 }
 
 const items: NavItem[] = [
@@ -36,7 +39,9 @@ const items: NavItem[] = [
   { to: '/help', label: 'Help / Guard', icon: LifeBuoy },
   { to: '/students', label: 'Students', icon: GraduationCap, roles: ['TEACHER', 'ADMIN'] },
   { to: '/users', label: 'Users', icon: Users, roles: ['ADMIN'] },
-  { to: '/admin', label: 'Admin', icon: Shield, roles: ['ADMIN'] },
+  { to: '/admin/classes', label: 'All classes', icon: School, roles: ['ADMIN'] },
+  { to: '/admin/audit', label: 'Audit log', icon: FileSpreadsheet, roles: ['ADMIN'] },
+  { to: '/admin', label: 'Admin', icon: Shield, roles: ['ADMIN'], end: true },
 ];
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
@@ -55,10 +60,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </div>
       <nav className="flex flex-col gap-1 mt-2">
-        {visible.map(({ to, label, icon: Icon }) => (
+        {visible.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
+            end={end}
             onClick={onNavigate}
             className={({ isActive }) =>
               cn(

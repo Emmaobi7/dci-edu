@@ -20,6 +20,7 @@ model User {
   passwordHash String
   name         String
   role         Role     @default(STUDENT)
+  disabledAt   DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -50,8 +51,12 @@ model User {
   sentMessages      Message[]             @relation("MessageSender")
   deletedMessages   Message[]             @relation("MessageDeleter")
   createdEvents     Event[]               @relation("EventAuthor")
+  createdResources  Resource[]            @relation("ResourceAuthor")
+  auditEventsAuthored AuditEvent[]        @relation("AuditEventActor")
+  auditEventsTargeting AuditEvent[]       @relation("AuditEventTargetUser")
 
   @@index([role])
+  @@index([disabledAt])
 }
 
 model Classroom {
@@ -338,4 +343,80 @@ model QuizAttempt {
 
   @@unique([quizId, studentId])
   @@index([studentId])
+}
+
+enum AuditAction {
+  USER_CREATED
+  USER_ROLE_CHANGED
+  USER_PASSWORD_RESET
+  USER_DISABLED
+  USER_ENABLED
+  USER_IMPORTED
+  CLASSROOM_DELETED
+  RESOURCE_CREATED
+  RESOURCE_DELETED
+}
+
+model Resource {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy   User                 @relation("ResourceAuthor", fields: [createdById], references: [id], onDelete: Cascade)
+  attachments ResourceAttachment[]
+
+  @@index([createdById])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model ResourceAttachment {
+  id         String         @id @default(cuid())
+  resourceId String
+  kind       AttachmentKind
+
+  // For IMAGE and DOCUMENT
+  filename   String?
+  storedName String?
+  mimetype   String?
+  size       Int?
+
+  // For YOUTUBE
+  youtubeId  String?
+  youtubeUrl String?
+
+  // For LINK (and mirrored for YOUTUBE)
+  url        String?
+  title      String?
+  host       String?
+
+  createdAt  DateTime @default(now())
+
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+}
+
+model AuditEvent {
+  id            String      @id @default(cuid())
+  action        AuditAction
+  actorId       String
+  targetUserId  String?
+  targetType    String?
+  targetId      String?
+  summary       String
+  metadata      Json?
+  createdAt     DateTime    @default(now())
+
+  actor       User  @relation("AuditEventActor", fields: [actorId], references: [id], onDelete: Cascade)
+  targetUser  User? @relation("AuditEventTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@index([targetUserId])
+  @@index([action])
 }
