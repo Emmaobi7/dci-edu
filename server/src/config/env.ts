@@ -9,6 +9,11 @@ const EnvSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('7d'),
   COOKIE_NAME: z.string().default('wapcharm_token'),
   CLIENT_ORIGIN: z.string().url().default('http://localhost:5173'),
+  COOKIE_SECURE: z
+    .union([z.boolean(), z.enum(['true', 'false'])])
+    .default(false)
+    .transform((v) => v === true || v === 'true'),
+  COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
   MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(10 * 1024 * 1024),
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
