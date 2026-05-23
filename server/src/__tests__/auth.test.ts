@@ -40,15 +40,16 @@ describe('POST /api/auth/register', () => {
     expect(res.status).toBe(400);
   });
 
-  it('registers a TEACHER and sets an httpOnly cookie', async () => {
+  it('public registration always creates a STUDENT and sets an httpOnly cookie (TEACHER role is ignored)', async () => {
     const res = await request(app).post('/api/auth/register').send({
-      name: 'Alice',
+      firstName: 'Alice',
+      surname: 'Stone',
       email: emailFor('alice'),
       password: PASSWORD,
       role: 'TEACHER',
     });
     expect(res.status).toBe(201);
-    expect(res.body.user).toMatchObject({ name: 'Alice', role: 'TEACHER' });
+    expect(res.body.user).toMatchObject({ name: 'Alice Stone', role: 'STUDENT' });
     expect(res.body.user).not.toHaveProperty('passwordHash');
 
     const cookies = ([] as string[]).concat(res.headers['set-cookie'] ?? []);

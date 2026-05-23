@@ -34,7 +34,9 @@ export type AuditAction =
   | 'USER_DISABLED'
   | 'USER_ENABLED'
   | 'USER_IMPORTED'
-  | 'CLASSROOM_DELETED';
+  | 'CLASSROOM_DELETED'
+  | 'RESOURCE_CREATED'
+  | 'RESOURCE_DELETED';
 
 export interface AuditEvent {
   id: string;

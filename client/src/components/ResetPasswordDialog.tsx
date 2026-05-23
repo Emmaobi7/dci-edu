@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import axios from 'axios';
-import { Check, Copy, RefreshCw } from 'lucide-react';
+import { Check, Copy, Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,7 @@ function randomPassword(): string {
 
 export function ResetPasswordDialog({ target, onClose, onReset }: Props) {
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shown, setShown] = useState<string | null>(null);
@@ -37,6 +38,7 @@ export function ResetPasswordDialog({ target, onClose, onReset }: Props) {
       setShown(null);
       setError(null);
       setCopied(false);
+      setShowPassword(true);
     }
   }, [target]);
 
@@ -92,14 +94,27 @@ export function ResetPasswordDialog({ target, onClose, onReset }: Props) {
           <div className="space-y-1.5">
             <Label htmlFor="new-password">New password</Label>
             <div className="flex gap-2">
-              <Input
-                id="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-                spellCheck={false}
-                required
-              />
+              <div className="relative flex-1">
+                <Input
+                  id="new-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  spellCheck={false}
+                  required
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                  className="absolute inset-y-0 right-0 grid w-10 place-items-center text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               <Button
                 type="button"
                 variant="outline"

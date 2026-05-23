@@ -16,6 +16,7 @@ const eventSelect = {
   title: true,
   description: true,
   location: true,
+  meetingUrl: true,
   startsAt: true,
   endsAt: true,
   classroomId: true,
@@ -33,6 +34,10 @@ export async function createEvent(req: Request, res: Response): Promise<void> {
   }
   const data = createEventSchema.parse(req.body);
 
+  if (data.type === 'CLASS_SESSION' && user.role !== 'ADMIN') {
+    throw new HttpError(403, 'Only admins can schedule live classes');
+  }
+
   if (data.classroomId) {
     // Class-scoped event: must be owner of the class (or admin).
     await ensureClassroomOwner(user, data.classroomId);
@@ -49,6 +54,7 @@ export async function createEvent(req: Request, res: Response): Promise<void> {
       title: data.title,
       description: data.description,
       location: data.location,
+      meetingUrl: data.meetingUrl,
       startsAt: data.startsAt,
       endsAt: data.endsAt,
       classroomId: data.classroomId,
@@ -58,8 +64,12 @@ export async function createEvent(req: Request, res: Response): Promise<void> {
   });
 
   const notifTitle =
-    event.type === 'CLASS_SESSION' ? `New class session: ${event.title}` : `New event: ${event.title}`;
-  const notifBody = event.description ? truncatePreview(event.description) : null;
+    event.type === 'CLASS_SESSION' ? `Live class scheduled: ${event.title}` : `New event: ${event.title}`;
+  const descPreview = event.description ? truncatePreview(event.description) : null;
+  const notifBody =
+    event.type === 'CLASS_SESSION' && event.meetingUrl
+      ? `Join: ${event.meetingUrl}${descPreview ? ` · ${descPreview}` : ''}`
+      : descPreview;
 
   if (event.classroomId) {
     await notifyClassroom({
@@ -145,6 +155,11 @@ export async function updateEvent(req: Request, res: Response): Promise<void> {
   }
 
   const data = updateEventSchema.parse(req.body);
+
+  if (data.type === 'CLASS_SESSION' && user.role !== 'ADMIN') {
+    throw new HttpError(403, 'Only admins can schedule live classes');
+  }
+
   const event = await prisma.event.update({
     where: { id },
     data: {
@@ -152,6 +167,7 @@ export async function updateEvent(req: Request, res: Response): Promise<void> {
       ...(data.title !== undefined ? { title: data.title } : {}),
       ...(data.description !== undefined ? { description: data.description } : {}),
       ...(data.location !== undefined ? { location: data.location } : {}),
+      ...(data.meetingUrl !== undefined ? { meetingUrl: data.meetingUrl } : {}),
       ...(data.startsAt !== undefined ? { startsAt: data.startsAt } : {}),
       ...(data.endsAt !== undefined ? { endsAt: data.endsAt } : {}),
     },

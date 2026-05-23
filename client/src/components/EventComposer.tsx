@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { createEvent, type EventInput } from '@/lib/events';
-import type { Classroom, EventType } from '@/lib/types';
+import type { Classroom } from '@/lib/types';
 
 interface Props {
   open: boolean;
@@ -30,7 +30,6 @@ function fromLocalInputValue(v: string): string | null {
 }
 
 export function EventComposer({ open, onClose, onCreated, classrooms, canCreateGlobal, initialDate }: Props) {
-  const [type, setType] = useState<EventType>('EVENT');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -45,7 +44,6 @@ export function EventComposer({ open, onClose, onCreated, classrooms, canCreateG
     const base = initialDate ?? new Date();
     base.setMinutes(0, 0, 0);
     if (!initialDate) base.setHours(base.getHours() + 1);
-    setType('EVENT');
     setTitle('');
     setDescription('');
     setLocation('');
@@ -77,7 +75,7 @@ export function EventComposer({ open, onClose, onCreated, classrooms, canCreateG
       return;
     }
     const payload: EventInput = {
-      type,
+      type: 'EVENT',
       title: title.trim(),
       description: description.trim() || null,
       location: location.trim() || null,
@@ -103,31 +101,17 @@ export function EventComposer({ open, onClose, onCreated, classrooms, canCreateG
   return (
     <Dialog open={open} onClose={onClose} title="New event" className="max-w-lg">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label htmlFor="event-type">Type</Label>
-            <select
-              id="event-type"
-              value={type}
-              onChange={(e) => setType(e.target.value as EventType)}
-              className="mt-1 h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
-            >
-              <option value="EVENT">Event</option>
-              <option value="CLASS_SESSION">Class session</option>
-            </select>
-          </div>
-          <div>
-            <Label htmlFor="event-scope">Visible to</Label>
-            <select
-              id="event-scope"
-              value={scope}
-              onChange={(e) => setScope(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
-            >
-              {canCreateGlobal && <option value="global">Everyone (global)</option>}
-              {classrooms.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
+        <div>
+          <Label htmlFor="event-scope">Visible to</Label>
+          <select
+            id="event-scope"
+            value={scope}
+            onChange={(e) => setScope(e.target.value)}
+            className="mt-1 h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
+          >
+            {canCreateGlobal && <option value="global">Everyone (global)</option>}
+            {classrooms.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
         </div>
 
         <div>

@@ -11,9 +11,10 @@ import {
   updateAssignmentSchema,
 } from '../schemas/assignment.schema.js';
 import {
-  attachmentPath,
-  safeUnlink,
+  persistUpload,
+  removeStoredObject,
   sanitizeDownloadName,
+  streamStoredObject,
 } from '../utils/uploads.js';
 import { notifyClassroom, truncatePreview } from '../utils/notifications.js';
 
@@ -250,11 +251,10 @@ export async function deleteAssignment(req: Request, res: Response): Promise<voi
   if (!isOwnerOrAdmin(user, existing.classroom.teacherId)) throw new HttpError(403, 'Forbidden');
 
   await prisma.assignment.delete({ where: { id } });
-  // Best-effort file cleanup after DB cascade
-  const { submissionPath } = await import('../utils/uploads.js');
+  // Best-effort object cleanup after DB cascade
   await Promise.all([
-    ...existing.attachments.map((a) => safeUnlink(attachmentPath(a.storedName))),
-    ...existing.submissions.map((s) => safeUnlink(submissionPath(s.storedName))),
+    ...existing.attachments.map((a) => removeStoredObject('attachments', a.storedName)),
+    ...existing.submissions.map((s) => removeStoredObject('submissions', s.storedName)),
   ]);
   res.status(204).end();
 }
@@ -268,22 +268,22 @@ export async function uploadAttachments(req: Request, res: Response): Promise<vo
     select: { id: true, classroom: { select: { teacherId: true } } },
   });
   if (!existing) throw new HttpError(404, 'Assignment not found');
-  if (!isOwnerOrAdmin(user, existing.classroom.teacherId)) {
-    // Clean up files Multer already wrote to disk
-    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
-    await Promise.all(files.map((f) => safeUnlink(f.path)));
-    throw new HttpError(403, 'Forbidden');
-  }
+  if (!isOwnerOrAdmin(user, existing.classroom.teacherId)) throw new HttpError(403, 'Forbidden');
+
   const files = (req.files as Express.Multer.File[] | undefined) ?? [];
   if (files.length === 0) throw new HttpError(400, 'No files uploaded');
 
+  const stored = await Promise.all(
+    files.map(async (f) => ({ file: f, storedName: await persistUpload('attachments', f) })),
+  );
+
   const created = await prisma.$transaction(
-    files.map((f) =>
+    stored.map(({ file: f, storedName }) =>
       prisma.assignmentAttachment.create({
         data: {
           assignmentId: id,
           filename: f.originalname,
-          storedName: f.filename,
+          storedName,
           mimetype: f.mimetype,
           size: f.size,
         },
@@ -309,7 +309,7 @@ export async function deleteAttachment(req: Request, res: Response): Promise<voi
   if (!isOwnerOrAdmin(user, att.assignment.classroom.teacherId)) throw new HttpError(403, 'Forbidden');
 
   await prisma.assignmentAttachment.delete({ where: { id: attachmentId } });
-  await safeUnlink(attachmentPath(att.storedName));
+  await removeStoredObject('attachments', att.storedName);
   res.status(204).end();
 }
 
@@ -327,10 +327,9 @@ export async function downloadAttachment(req: Request, res: Response): Promise<v
   if (!att) throw new HttpError(404, 'Attachment not found');
   await ensureClassroomMember(user, att.assignment.classroomId);
 
-  res.type(att.mimetype);
   res.setHeader(
     'Content-Disposition',
     `attachment; filename="${sanitizeDownloadName(att.filename)}"`,
   );
-  res.sendFile(attachmentPath(att.storedName));
+  await streamStoredObject(res, 'attachments', att.storedName, att.mimetype);
 }

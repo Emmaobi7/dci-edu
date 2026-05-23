@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  ExternalLink,
   FileQuestion,
   MapPin,
   Plus,
@@ -320,6 +321,17 @@ export function CalendarPage() {
                           <MapPin className="h-3 w-3" /> {it.raw.location}
                         </div>
                       )}
+                      {it.raw?.meetingUrl && (
+                        <a
+                          href={it.raw.meetingUrl}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-brand text-white px-2.5 py-1 text-xs font-semibold mt-1.5 hover:bg-brand/90"
+                        >
+                          <ExternalLink className="h-3 w-3" /> Join
+                        </a>
+                      )}
                     </div>
                     {it.raw && canCompose && (it.raw.classroomId == null ? canCreateGlobal : true) && (
                       <button
@@ -351,12 +363,24 @@ export function CalendarPage() {
               {upcomingSessions.map((e) => {
                 const d = new Date(e.startsAt);
                 return (
-                  <li key={e.id} className="text-sm">
-                    <div className="font-medium truncate">{e.title}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                      {e.classroom ? ` · ${e.classroom.name}` : ' · Global'}
+                  <li key={e.id} className="text-sm flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{e.title}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                        {e.classroom ? ` · ${e.classroom.name}` : ' · Global'}
+                      </div>
                     </div>
+                    {e.meetingUrl && (
+                      <a
+                        href={e.meetingUrl}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="shrink-0 inline-flex items-center gap-1 rounded-md border border-white/70 bg-white/60 px-2 py-0.5 text-xs font-medium hover:bg-white/90"
+                      >
+                        <ExternalLink className="h-3 w-3" /> Join
+                      </a>
+                    )}
                   </li>
                 );
               })}

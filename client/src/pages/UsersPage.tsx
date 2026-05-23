@@ -149,7 +149,7 @@ export function UsersPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
             <p className="text-sm text-muted-foreground">
-              Manage everyone in Wapcharm Classroom. Only admins can promote faculty or other admins.
+              Manage everyone in WAPCPharm Classroom. Only admins can promote faculty or other admins.
             </p>
           </div>
         </div>

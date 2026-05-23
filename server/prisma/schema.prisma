@@ -284,6 +284,7 @@ model Event {
   title       String
   description String?
   location    String?
+  meetingUrl  String?
   startsAt    DateTime
   endsAt      DateTime?
   classroomId String?

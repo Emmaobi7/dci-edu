@@ -70,6 +70,6 @@ export function toUserDto(u: UserRecord): UserDto {
     positionAtWapcp: u.positionAtWapcp,
     matriculationNumber: u.matriculationNumber,
     topics: u.topics,
-    avatarUrl: u.avatarStoredName ? `/users/${u.id}/avatar` : null,
+    avatarUrl: u.avatarStoredName ? `/users/${u.id}/avatar?v=${u.avatarStoredName.slice(0, 12)}` : null,
   };
 }

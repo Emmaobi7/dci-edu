@@ -9,7 +9,7 @@ import {
 } from '../schemas/profile.schema.js';
 import { toUserDto, userDtoSelect } from '../utils/userDto.js';
 import { ensureClassroomOwner } from '../utils/classroomAuth.js';
-import { avatarPath, safeUnlink } from '../utils/uploads.js';
+import { persistUpload, removeStoredObject, streamStoredObject } from '../utils/uploads.js';
 
 export async function getMyProfile(req: Request, res: Response): Promise<void> {
   if (!req.user) throw new HttpError(401, 'Not authenticated');
@@ -89,14 +89,16 @@ export async function uploadMyAvatar(req: Request, res: Response): Promise<void>
     select: { avatarStoredName: true },
   });
 
+  const storedName = await persistUpload('avatars', req.file);
+
   const user = await prisma.user.update({
     where: { id: req.user.id },
-    data: { avatarStoredName: req.file.filename, avatarMimetype: req.file.mimetype },
+    data: { avatarStoredName: storedName, avatarMimetype: req.file.mimetype },
     select: userDtoSelect,
   });
 
-  if (previous?.avatarStoredName && previous.avatarStoredName !== req.file.filename) {
-    await safeUnlink(avatarPath(previous.avatarStoredName));
+  if (previous?.avatarStoredName && previous.avatarStoredName !== storedName) {
+    await removeStoredObject('avatars', previous.avatarStoredName);
   }
   res.status(201).json({ user: toUserDto(user) });
 }
@@ -112,7 +114,7 @@ export async function deleteMyAvatar(req: Request, res: Response): Promise<void>
     data: { avatarStoredName: null, avatarMimetype: null },
     select: userDtoSelect,
   });
-  if (previous?.avatarStoredName) await safeUnlink(avatarPath(previous.avatarStoredName));
+  if (previous?.avatarStoredName) await removeStoredObject('avatars', previous.avatarStoredName);
   res.json({ user: toUserDto(user) });
 }
 
@@ -124,9 +126,20 @@ export async function getUserAvatar(req: Request, res: Response): Promise<void> 
     select: { avatarStoredName: true, avatarMimetype: true },
   });
   if (!target || !target.avatarStoredName) throw new HttpError(404, 'No avatar');
-  res.type(target.avatarMimetype ?? 'application/octet-stream');
   res.setHeader('Cache-Control', 'private, max-age=300');
-  res.sendFile(avatarPath(target.avatarStoredName));
+  try {
+    await streamStoredObject(res, 'avatars', target.avatarStoredName, target.avatarMimetype ?? 'application/octet-stream');
+  } catch (err) {
+    // Stale DB reference (e.g. uploaded under in-memory storage before Supabase was configured).
+    // Clear it so the UI stops requesting a non-existent object.
+    // eslint-disable-next-line no-console
+    console.warn('[avatar] missing in storage, clearing reference for user', userId, err instanceof Error ? err.message : err);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { avatarStoredName: null, avatarMimetype: null },
+    }).catch(() => undefined);
+    throw new HttpError(404, 'No avatar');
+  }
 }
 
 export async function getClassroomStudentProfile(req: Request, res: Response): Promise<void> {

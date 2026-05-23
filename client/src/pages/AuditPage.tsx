@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  Activity,
   FileSpreadsheet,
   KeyRound,
+  Library,
   Pause,
   Play,
   Trash2,
@@ -13,7 +15,9 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { listAuditEvents, type AuditAction, type AuditEvent } from '@/lib/admin';
 
-const ACTION_META: Record<AuditAction, { label: string; short: string; icon: React.ComponentType<{ className?: string }>; tone: string }> = {
+type ActionMeta = { label: string; short: string; icon: React.ComponentType<{ className?: string }>; tone: string };
+
+const ACTION_META: Record<AuditAction, ActionMeta> = {
   USER_CREATED:        { label: 'User created',     short: 'Created',     icon: UserPlus,  tone: 'bg-emerald-500/15 text-emerald-700' },
   USER_ROLE_CHANGED:   { label: 'Role changed',     short: 'Role',        icon: UserCog,   tone: 'bg-violet-500/15 text-violet-700' },
   USER_PASSWORD_RESET: { label: 'Password reset',   short: 'Password',    icon: KeyRound,  tone: 'bg-sky-500/15 text-sky-700' },
@@ -21,7 +25,11 @@ const ACTION_META: Record<AuditAction, { label: string; short: string; icon: Rea
   USER_ENABLED:        { label: 'User reactivated', short: 'Reactivated', icon: Play,      tone: 'bg-emerald-500/15 text-emerald-700' },
   USER_IMPORTED:       { label: 'CSV import',       short: 'Import',      icon: Upload,    tone: 'bg-sky-500/15 text-sky-700' },
   CLASSROOM_DELETED:   { label: 'Class deleted',    short: 'Class',       icon: Trash2,    tone: 'bg-rose-500/15 text-rose-700' },
+  RESOURCE_CREATED:    { label: 'Resource added',   short: 'Resource',    icon: Library,   tone: 'bg-emerald-500/15 text-emerald-700' },
+  RESOURCE_DELETED:    { label: 'Resource deleted', short: 'Resource',    icon: Library,   tone: 'bg-rose-500/15 text-rose-700' },
 };
+
+const FALLBACK_META: ActionMeta = { label: 'Event', short: 'Event', icon: Activity, tone: 'bg-muted text-muted-foreground' };
 
 function formatTime(iso: string) {
   const d = new Date(iso);
@@ -94,7 +102,7 @@ export function AuditPage() {
               </FilterPill>
               {actions.map((a) => (
                 <FilterPill key={a} active={actionFilter === a} onClick={() => setActionFilter(a)}>
-                  {ACTION_META[a].short}
+                  {(ACTION_META[a] ?? FALLBACK_META).short}
                 </FilterPill>
               ))}
             </div>
@@ -110,7 +118,7 @@ export function AuditPage() {
         {events && filtered.length > 0 && (
           <ul className="divide-y divide-white/40 -mx-1">
             {filtered.map((e) => {
-              const meta = ACTION_META[e.action];
+              const meta = ACTION_META[e.action] ?? FALLBACK_META;
               const Icon = meta.icon;
               return (
                 <li key={e.id} className="flex items-center gap-3 px-1 py-3">

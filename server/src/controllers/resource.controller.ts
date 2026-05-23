@@ -10,7 +10,12 @@ import {
   updateResourceSchema,
 } from '../schemas/resource.schema.js';
 import { normalizeLink, parseYoutubeId } from '../schemas/announcement.schema.js';
-import { resourceDocPath, safeUnlink, sanitizeDownloadName } from '../utils/uploads.js';
+import {
+  persistUpload,
+  removeStoredObject,
+  sanitizeDownloadName,
+  streamStoredObject,
+} from '../utils/uploads.js';
 import { writeAudit } from '../utils/audit.js';
 
 function requireUser(req: Request) {
@@ -153,7 +158,7 @@ export async function deleteResource(req: Request, res: Response): Promise<void>
   const target = await prisma.resource.findUnique({ where: { id }, select: { title: true } });
   await prisma.resource.delete({ where: { id } });
   await Promise.all(
-    attachments.map((a) => (a.storedName ? safeUnlink(resourceDocPath(a.storedName)) : Promise.resolve())),
+    attachments.map((a) => (a.storedName ? removeStoredObject('resource-docs', a.storedName) : Promise.resolve())),
   );
   await writeAudit({
     action: 'RESOURCE_DELETED',
@@ -168,21 +173,19 @@ export async function deleteResource(req: Request, res: Response): Promise<void>
 export async function uploadDocuments(req: Request, res: Response): Promise<void> {
   const { id } = req.params as { id: string };
   const files = (req.files as Express.Multer.File[] | undefined) ?? [];
-  try {
-    await loadForWrite(req, id);
-  } catch (err) {
-    await Promise.all(files.map((f) => safeUnlink(f.path)));
-    throw err;
-  }
+  await loadForWrite(req, id);
   if (files.length === 0) throw new HttpError(400, 'No files uploaded');
+  const stored = await Promise.all(
+    files.map(async (f) => ({ file: f, storedName: await persistUpload('resource-docs', f) })),
+  );
   const created = await prisma.$transaction(
-    files.map((f) =>
+    stored.map(({ file: f, storedName }) =>
       prisma.resourceAttachment.create({
         data: {
           resourceId: id,
           kind: 'DOCUMENT',
           filename: f.originalname,
-          storedName: f.filename,
+          storedName,
           mimetype: f.mimetype,
           size: f.size,
         },
@@ -252,7 +255,7 @@ export async function deleteAttachment(req: Request, res: Response): Promise<voi
   }
   await prisma.resourceAttachment.delete({ where: { id: attachmentId } });
   if (att.kind === 'DOCUMENT' && att.storedName) {
-    await safeUnlink(resourceDocPath(att.storedName));
+    await removeStoredObject('resource-docs', att.storedName);
   }
   res.status(204).end();
 }
@@ -268,10 +271,9 @@ export async function downloadAttachment(req: Request, res: Response): Promise<v
   if (att.kind !== 'DOCUMENT' || !att.storedName) {
     throw new HttpError(400, 'Attachment has no downloadable file');
   }
-  res.type(att.mimetype ?? 'application/octet-stream');
   res.setHeader(
     'Content-Disposition',
     `attachment; filename="${sanitizeDownloadName(att.filename ?? 'file')}"`,
   );
-  res.sendFile(resourceDocPath(att.storedName));
+  await streamStoredObject(res, 'resource-docs', att.storedName, att.mimetype ?? 'application/octet-stream');
 }

@@ -190,13 +190,16 @@ export function ClassroomDetailPage() {
   }
 
   const tabs = useMemo(() => {
+    const isStudent = user?.role === 'STUDENT';
     const base: { key: TabKey; label: string }[] = [
       { key: 'stream', label: 'Stream' },
       { key: 'overview', label: 'Overview' },
       { key: 'assignments', label: 'Assignments' },
-      { key: 'quizzes', label: 'Exams' },
-      { key: 'chat', label: 'Chat' },
     ];
+    if (!isStudent) {
+      base.push({ key: 'quizzes', label: 'Exams' });
+    }
+    base.push({ key: 'chat', label: 'Chat' });
     if (isOwner) {
       base.push({ key: 'insights', label: 'Insights' });
     }
@@ -204,7 +207,7 @@ export function ClassroomDetailPage() {
       base.push({ key: 'members', label: `Members (${classroom?.studentCount ?? 0})` });
     }
     return base;
-  }, [isOwner, isCurrentModerator, classroom?.studentCount]);
+  }, [isOwner, isCurrentModerator, user?.role, classroom?.studentCount]);
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading class…</div>;
   if (error || !classroom) {
@@ -307,7 +310,7 @@ export function ClassroomDetailPage() {
         <AssignmentsTab classroomId={classroom.id} viewerRole={user?.role} isOwner={isOwner} />
       )}
 
-      {tab === 'quizzes' && (
+      {tab === 'quizzes' && user?.role !== 'STUDENT' && (
         <QuizzesTab classroomId={classroom.id} viewerRole={user?.role} isOwner={isOwner} />
       )}
 

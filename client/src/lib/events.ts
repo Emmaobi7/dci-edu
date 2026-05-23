@@ -6,6 +6,7 @@ export interface EventInput {
   title: string;
   description?: string | null;
   location?: string | null;
+  meetingUrl?: string | null;
   startsAt: string;
   endsAt?: string | null;
   classroomId?: string | null;

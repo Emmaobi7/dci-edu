@@ -1,20 +1,43 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, ClipboardList, GraduationCap, Users } from 'lucide-react';
+import { ArrowRight, BookOpen, ClipboardList, ExternalLink, GraduationCap, Users, Video } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { listClassrooms } from '@/lib/classrooms';
 import { listMyUpcomingAssignments, type UpcomingAssignmentsResult } from '@/lib/assignments';
+import { listMyEvents } from '@/lib/events';
 import { roleLabel } from '@/lib/utils';
-import type { Classroom } from '@/lib/types';
+import type { CalendarEvent, Classroom } from '@/lib/types';
 import { StudentProgressSection } from '@/components/StudentProgressSection';
+
+const SOON_MS = 15 * 60 * 1000;
+
+type LiveStatus = 'live' | 'soon' | 'scheduled';
+
+function liveStatus(e: CalendarEvent, now: number): LiveStatus {
+  const start = new Date(e.startsAt).getTime();
+  const end = e.endsAt ? new Date(e.endsAt).getTime() : start + 60 * 60 * 1000;
+  if (now >= start && now <= end) return 'live';
+  if (start - now > 0 && start - now <= SOON_MS) return 'soon';
+  return 'scheduled';
+}
+
+function liveBadge(s: LiveStatus) {
+  switch (s) {
+    case 'live': return { label: 'Live now', cls: 'bg-rose-500 text-white animate-pulse' };
+    case 'soon': return { label: 'Starting soon', cls: 'bg-amber-500 text-white' };
+    default: return { label: 'Scheduled', cls: 'bg-sky-500/15 text-sky-700' };
+  }
+}
 
 export function DashboardPage() {
   const { user } = useAuth();
   const [classes, setClasses] = useState<Classroom[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [upcoming, setUpcoming] = useState<UpcomingAssignmentsResult | null>(null);
+  const [liveSessions, setLiveSessions] = useState<CalendarEvent[]>([]);
+  const [, tick] = useState(0);
 
   const isTeacher = user?.role === 'TEACHER' || user?.role === 'ADMIN';
   const isStudent = user?.role === 'STUDENT';
@@ -35,6 +58,31 @@ export function DashboardPage() {
       .catch(() => { /* non-fatal */ });
     return () => { cancelled = true; };
   }, [isStudent]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listMyEvents()
+      .then((all) => {
+        if (cancelled) return;
+        const now = Date.now();
+        const sessions = all
+          .filter((e) => e.type === 'CLASS_SESSION')
+          .filter((e) => {
+            const end = e.endsAt ? new Date(e.endsAt).getTime() : new Date(e.startsAt).getTime() + 60 * 60 * 1000;
+            return end >= now;
+          })
+          .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+          .slice(0, 3);
+        setLiveSessions(sessions);
+      })
+      .catch(() => { /* non-fatal */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    const id = window.setInterval(() => tick((n) => n + 1), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const classLabel = isTeacher ? 'My classes' : 'Enrolled classes';
   const total = classes?.length ?? 0;
@@ -145,6 +193,59 @@ export function DashboardPage() {
                     </div>
                   </Card>
                 </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {liveSessions.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold inline-flex items-center gap-2">
+              <Video className="h-4 w-4 text-brand" /> Upcoming live classes
+            </h2>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/live-classes">View all <ArrowRight className="h-4 w-4" /></Link>
+            </Button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {liveSessions.map((e) => {
+              const now = Date.now();
+              const s = liveStatus(e, now);
+              const badge = liveBadge(s);
+              const when = new Date(e.startsAt).toLocaleString(undefined, {
+                weekday: 'short', month: 'short', day: 'numeric',
+                hour: 'numeric', minute: '2-digit',
+              });
+              return (
+                <Card key={e.id} className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${badge.cls}`}>
+                      {badge.label}
+                    </span>
+                    <span className="inline-block rounded-full bg-white/60 border border-white/70 text-foreground/70 px-2 py-0.5 text-[10px] font-medium">
+                      {e.classroom?.name ?? 'Global'}
+                    </span>
+                  </div>
+                  <div className="font-semibold truncate">{e.title}</div>
+                  <div className="text-xs text-muted-foreground">{when}</div>
+                  {e.meetingUrl && (
+                    <a
+                      href={e.meetingUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className={
+                        'mt-1 inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors w-fit ' +
+                        (s === 'live' || s === 'soon'
+                          ? 'bg-brand text-white hover:bg-brand/90'
+                          : 'border border-white/70 bg-white/60 text-foreground hover:bg-white/90')
+                      }
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" /> Join meeting
+                    </a>
+                  )}
+                </Card>
               );
             })}
           </div>

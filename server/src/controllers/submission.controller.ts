@@ -3,7 +3,12 @@ import { prisma } from '../db/prisma.js';
 import { HttpError } from '../utils/HttpError.js';
 import { isOwnerOrAdmin } from '../utils/classroomAuth.js';
 import { gradeSubmissionSchema } from '../schemas/assignment.schema.js';
-import { safeUnlink, sanitizeDownloadName, submissionPath } from '../utils/uploads.js';
+import {
+  persistUpload,
+  removeStoredObject,
+  sanitizeDownloadName,
+  streamStoredObject,
+} from '../utils/uploads.js';
 
 function requireUser(req: Request) {
   if (!req.user) throw new HttpError(401, 'Not authenticated');
@@ -44,12 +49,7 @@ export async function submitAssignment(req: Request, res: Response): Promise<voi
   const { id: assignmentId } = req.params as { id: string };
   const file = req.file;
 
-  async function fail(status: number, message: string): Promise<never> {
-    if (file) await safeUnlink(file.path);
-    throw new HttpError(status, message);
-  }
-
-  if (user.role !== 'STUDENT') return fail(403, 'Only students can submit');
+  if (user.role !== 'STUDENT') throw new HttpError(403, 'Only students can submit');
   if (!file) throw new HttpError(400, 'A file is required');
 
   const assignment = await loadAssignmentContext(assignmentId);
@@ -58,16 +58,17 @@ export async function submitAssignment(req: Request, res: Response): Promise<voi
     where: { classroomId_studentId: { classroomId: assignment.classroomId, studentId: user.id } },
     select: { id: true },
   });
-  if (!enrolment) return fail(403, 'Not enrolled in this classroom');
+  if (!enrolment) throw new HttpError(403, 'Not enrolled in this classroom');
 
   const existing = await prisma.submission.findUnique({
     where: { assignmentId_studentId: { assignmentId, studentId: user.id } },
     select: { id: true, storedName: true, gradedAt: true },
   });
   if (existing?.gradedAt) {
-    return fail(409, 'This submission has already been graded and cannot be replaced');
+    throw new HttpError(409, 'This submission has already been graded and cannot be replaced');
   }
 
+  const storedName = await persistUpload('submissions', file);
   const now = new Date();
   const isLate = assignment.dueDate ? now > assignment.dueDate : false;
 
@@ -77,7 +78,7 @@ export async function submitAssignment(req: Request, res: Response): Promise<voi
       where: { id: existing.id },
       data: {
         filename: file.originalname,
-        storedName: file.filename,
+        storedName,
         mimetype: file.mimetype,
         size: file.size,
         isLate,
@@ -85,14 +86,14 @@ export async function submitAssignment(req: Request, res: Response): Promise<voi
       },
       select: submissionPublic,
     });
-    await safeUnlink(submissionPath(existing.storedName));
+    await removeStoredObject('submissions', existing.storedName);
   } else {
     submission = await prisma.submission.create({
       data: {
         assignmentId,
         studentId: user.id,
         filename: file.originalname,
-        storedName: file.filename,
+        storedName,
         mimetype: file.mimetype,
         size: file.size,
         isLate,
@@ -169,10 +170,9 @@ export async function downloadSubmission(req: Request, res: Response): Promise<v
   const isOwnerStudent = user.id === sub.studentId;
   if (!isTeacher && !isOwnerStudent) throw new HttpError(403, 'Forbidden');
 
-  res.type(sub.mimetype);
   res.setHeader(
     'Content-Disposition',
     `attachment; filename="${sanitizeDownloadName(sub.filename)}"`,
   );
-  res.sendFile(submissionPath(sub.storedName));
+  await streamStoredObject(res, 'submissions', sub.storedName, sub.mimetype);
 }

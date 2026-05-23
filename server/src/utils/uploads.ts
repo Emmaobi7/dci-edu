@@ -1,10 +1,10 @@
 import { randomBytes } from 'node:crypto';
-import { mkdir, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import multer, { type FileFilterCallback } from 'multer';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { env } from '../config/env.js';
 import { HttpError } from './HttpError.js';
+import { objectStorage, type ObjectBlob, type StorageKind } from './storage.js';
 
 const ALLOWED_MIMETYPES = new Set<string>([
   'application/pdf',
@@ -43,21 +43,6 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const MAX_ANNOUNCEMENT_DOC_BYTES = 20 * 1024 * 1024;
 
-export const UPLOAD_ROOT = path.isAbsolute(env.UPLOAD_DIR)
-  ? env.UPLOAD_DIR
-  : path.resolve(process.cwd(), env.UPLOAD_DIR);
-
-export const ATTACHMENTS_DIR = path.join(UPLOAD_ROOT, 'attachments');
-export const SUBMISSIONS_DIR = path.join(UPLOAD_ROOT, 'submissions');
-export const ANNOUNCEMENT_IMAGES_DIR = path.join(UPLOAD_ROOT, 'announcement-images');
-export const ANNOUNCEMENT_DOCS_DIR = path.join(UPLOAD_ROOT, 'announcement-docs');
-export const RESOURCE_DOCS_DIR = path.join(UPLOAD_ROOT, 'resource-docs');
-export const AVATARS_DIR = path.join(UPLOAD_ROOT, 'avatars');
-
-async function ensureDir(dir: string): Promise<void> {
-  await mkdir(dir, { recursive: true });
-}
-
 function safeBaseName(original: string): string {
   const base = path.basename(original).replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 120);
   return base || 'file';
@@ -90,62 +75,46 @@ function documentFilter(_req: Request, file: Express.Multer.File, cb: FileFilter
   cb(null, true);
 }
 
-function buildStorage(targetDir: string) {
-  return multer.diskStorage({
-    destination: async (_req, _file, cb) => {
-      try {
-        await ensureDir(targetDir);
-        cb(null, targetDir);
-      } catch (err) {
-        cb(err as Error, targetDir);
-      }
-    },
-    filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
-      const id = randomBytes(12).toString('hex');
-      cb(null, `${id}${ext}`);
-    },
-  });
-}
+const memoryStorage = multer.memoryStorage();
 
 export const attachmentUpload = multer({
-  storage: buildStorage(ATTACHMENTS_DIR),
+  storage: memoryStorage,
   limits: { fileSize: env.MAX_UPLOAD_BYTES, files: 10 },
   fileFilter,
 });
 
 export const submissionUpload = multer({
-  storage: buildStorage(SUBMISSIONS_DIR),
+  storage: memoryStorage,
   limits: { fileSize: env.MAX_UPLOAD_BYTES, files: 1 },
   fileFilter,
 });
 
 export const announcementImageUpload = multer({
-  storage: buildStorage(ANNOUNCEMENT_IMAGES_DIR),
+  storage: memoryStorage,
   limits: { fileSize: MAX_IMAGE_BYTES, files: 10 },
   fileFilter: imageFilter,
 });
 
 export const announcementDocUpload = multer({
-  storage: buildStorage(ANNOUNCEMENT_DOCS_DIR),
+  storage: memoryStorage,
   limits: { fileSize: MAX_ANNOUNCEMENT_DOC_BYTES, files: 10 },
   fileFilter: documentFilter,
 });
 
 export const resourceDocUpload = multer({
-  storage: buildStorage(RESOURCE_DOCS_DIR),
+  storage: memoryStorage,
   limits: { fileSize: MAX_ANNOUNCEMENT_DOC_BYTES, files: 10 },
   fileFilter: documentFilter,
 });
 
 export const avatarUpload = multer({
-  storage: buildStorage(AVATARS_DIR),
+  storage: memoryStorage,
   limits: { fileSize: MAX_AVATAR_BYTES, files: 1 },
   fileFilter: imageFilter,
 });
 
 export const csvUpload = multer({
-  storage: multer.memoryStorage(),
+  storage: memoryStorage,
   limits: { fileSize: 2 * 1024 * 1024, files: 1 },
   fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
@@ -161,41 +130,40 @@ export const csvUpload = multer({
   },
 });
 
-export function attachmentPath(storedName: string): string {
-  return path.join(ATTACHMENTS_DIR, storedName);
-}
-
-export function submissionPath(storedName: string): string {
-  return path.join(SUBMISSIONS_DIR, storedName);
-}
-
-export function announcementImagePath(storedName: string): string {
-  return path.join(ANNOUNCEMENT_IMAGES_DIR, storedName);
-}
-
-export function announcementDocPath(storedName: string): string {
-  return path.join(ANNOUNCEMENT_DOCS_DIR, storedName);
-}
-
-export function resourceDocPath(storedName: string): string {
-  return path.join(RESOURCE_DOCS_DIR, storedName);
-}
-
-export function avatarPath(storedName: string): string {
-  return path.join(AVATARS_DIR, storedName);
-}
-
-export async function safeUnlink(filePath: string): Promise<void> {
-  try {
-    await unlink(filePath);
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-      // eslint-disable-next-line no-console
-      console.warn('Failed to delete upload:', filePath, err);
-    }
-  }
+export function generateStoredName(originalName: string): string {
+  const ext = path.extname(originalName).toLowerCase();
+  return `${randomBytes(12).toString('hex')}${ext}`;
 }
 
 export function sanitizeDownloadName(original: string): string {
   return safeBaseName(original);
+}
+
+export async function persistUpload(
+  kind: StorageKind,
+  file: Express.Multer.File,
+): Promise<string> {
+  const storedName = generateStoredName(file.originalname);
+  await objectStorage.upload(kind, storedName, file.buffer, file.mimetype);
+  return storedName;
+}
+
+export async function removeStoredObject(kind: StorageKind, storedName: string): Promise<void> {
+  await objectStorage.remove(kind, storedName);
+}
+
+export async function fetchStoredObject(kind: StorageKind, storedName: string): Promise<ObjectBlob> {
+  return objectStorage.fetch(kind, storedName);
+}
+
+export async function streamStoredObject(
+  res: Response,
+  kind: StorageKind,
+  storedName: string,
+  fallbackContentType: string,
+): Promise<void> {
+  const blob = await objectStorage.fetch(kind, storedName);
+  res.type(blob.contentType || fallbackContentType);
+  res.setHeader('Content-Length', String(blob.contentLength));
+  res.send(blob.body);
 }

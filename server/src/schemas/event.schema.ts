@@ -18,12 +18,18 @@ const nullableTrimmedString = (max: number) =>
     .optional()
     .transform((v) => (v ? v : null));
 
+const nullableUrl = z
+  .union([z.string().trim().url('Must be a valid URL').max(2000), z.literal(''), z.null()])
+  .optional()
+  .transform((v) => (v ? v : null));
+
 export const createEventSchema = z
   .object({
     type: eventTypeSchema.optional().default('EVENT'),
     title: z.string().trim().min(1, 'Title is required').max(200),
     description: nullableTrimmedString(5000),
     location: nullableTrimmedString(200),
+    meetingUrl: nullableUrl,
     startsAt: requiredDate,
     endsAt: optionalDate,
     classroomId: z
@@ -47,6 +53,7 @@ export const updateEventSchema = z
     title: z.string().trim().min(1).max(200).optional(),
     description: z.string().trim().max(5000).nullable().optional(),
     location: z.string().trim().max(200).nullable().optional(),
+    meetingUrl: nullableUrl,
     startsAt: z
       .union([z.string().datetime({ offset: true }), z.string().datetime()])
       .optional()

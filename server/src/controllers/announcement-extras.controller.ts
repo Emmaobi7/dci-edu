@@ -10,10 +10,10 @@ import {
   parseYoutubeId,
 } from '../schemas/announcement.schema.js';
 import {
-  announcementDocPath,
-  announcementImagePath,
-  safeUnlink,
+  persistUpload,
+  removeStoredObject,
   sanitizeDownloadName,
+  streamStoredObject,
 } from '../utils/uploads.js';
 
 function requireUser(req: Request) {
@@ -65,24 +65,24 @@ export async function uploadImages(req: Request, res: Response): Promise<void> {
     where: { id },
     select: { id: true, authorId: true, classroom: { select: { teacherId: true } } },
   });
-  if (!a) {
-    await Promise.all(files.map((f) => safeUnlink(f.path)));
-    throw new HttpError(404, 'Announcement not found');
-  }
+  if (!a) throw new HttpError(404, 'Announcement not found');
   if (!isOwnerOrAdmin(user, a.classroom.teacherId) && user.id !== a.authorId) {
-    await Promise.all(files.map((f) => safeUnlink(f.path)));
     throw new HttpError(403, 'Forbidden');
   }
   if (files.length === 0) throw new HttpError(400, 'No files uploaded');
 
+  const stored = await Promise.all(
+    files.map(async (f) => ({ file: f, storedName: await persistUpload('announcement-images', f) })),
+  );
+
   const created = await prisma.$transaction(
-    files.map((f) =>
+    stored.map(({ file: f, storedName }) =>
       prisma.announcementAttachment.create({
         data: {
           announcementId: id,
           kind: 'IMAGE',
           filename: f.originalname,
-          storedName: f.filename,
+          storedName,
           mimetype: f.mimetype,
           size: f.size,
         },
@@ -119,24 +119,24 @@ export async function uploadDocuments(req: Request, res: Response): Promise<void
     where: { id },
     select: { id: true, authorId: true, classroom: { select: { teacherId: true } } },
   });
-  if (!a) {
-    await Promise.all(files.map((f) => safeUnlink(f.path)));
-    throw new HttpError(404, 'Announcement not found');
-  }
+  if (!a) throw new HttpError(404, 'Announcement not found');
   if (!isOwnerOrAdmin(user, a.classroom.teacherId) && user.id !== a.authorId) {
-    await Promise.all(files.map((f) => safeUnlink(f.path)));
     throw new HttpError(403, 'Forbidden');
   }
   if (files.length === 0) throw new HttpError(400, 'No files uploaded');
 
+  const stored = await Promise.all(
+    files.map(async (f) => ({ file: f, storedName: await persistUpload('announcement-docs', f) })),
+  );
+
   const created = await prisma.$transaction(
-    files.map((f) =>
+    stored.map(({ file: f, storedName }) =>
       prisma.announcementAttachment.create({
         data: {
           announcementId: id,
           kind: 'DOCUMENT',
           filename: f.originalname,
-          storedName: f.filename,
+          storedName,
           mimetype: f.mimetype,
           size: f.size,
         },
@@ -200,9 +200,9 @@ export async function deleteAttachment(req: Request, res: Response): Promise<voi
   await prisma.announcementAttachment.delete({ where: { id: attachmentId } });
   if (att.storedName) {
     if (att.kind === 'IMAGE') {
-      await safeUnlink(announcementImagePath(att.storedName));
+      await removeStoredObject('announcement-images', att.storedName);
     } else if (att.kind === 'DOCUMENT') {
-      await safeUnlink(announcementDocPath(att.storedName));
+      await removeStoredObject('announcement-docs', att.storedName);
     }
   }
   res.status(204).end();
@@ -224,15 +224,15 @@ export async function downloadAttachment(req: Request, res: Response): Promise<v
   }
   await ensureClassroomMember(user, att.announcement.classroomId);
 
-  res.type(att.mimetype ?? 'application/octet-stream');
   const disposition = att.kind === 'IMAGE' ? 'inline' : 'attachment';
   res.setHeader(
     'Content-Disposition',
     `${disposition}; filename="${sanitizeDownloadName(att.filename ?? 'file')}"`,
   );
-  res.sendFile(
-    att.kind === 'IMAGE'
-      ? announcementImagePath(att.storedName)
-      : announcementDocPath(att.storedName),
+  await streamStoredObject(
+    res,
+    att.kind === 'IMAGE' ? 'announcement-images' : 'announcement-docs',
+    att.storedName,
+    att.mimetype ?? 'application/octet-stream',
   );
 }

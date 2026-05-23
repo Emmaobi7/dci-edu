@@ -11,12 +11,7 @@ import {
   parseYoutubeId,
   updateAnnouncementSchema,
 } from '../schemas/announcement.schema.js';
-import {
-  announcementDocPath,
-  announcementImagePath,
-  safeUnlink,
-  sanitizeDownloadName,
-} from '../utils/uploads.js';
+import { removeStoredObject } from '../utils/uploads.js';
 import { notifyClassroom, truncatePreview } from '../utils/notifications.js';
 
 function requireUser(req: Request) {
@@ -170,10 +165,9 @@ export async function deleteAnnouncement(req: Request, res: Response): Promise<v
   await Promise.all(
     existing.attachments
       .filter((a) => a.storedName && (a.kind === 'IMAGE' || a.kind === 'DOCUMENT'))
-      .map((a) => safeUnlink(
-        a.kind === 'IMAGE'
-          ? announcementImagePath(a.storedName as string)
-          : announcementDocPath(a.storedName as string),
+      .map((a) => removeStoredObject(
+        a.kind === 'IMAGE' ? 'announcement-images' : 'announcement-docs',
+        a.storedName as string,
       )),
   );
   res.status(204).end();

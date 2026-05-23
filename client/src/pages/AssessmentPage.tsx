@@ -1,17 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { CalendarClock, CheckCircle2, ClipboardList, Clock } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import {
+  CalendarClock, CheckCircle2, ClipboardList, Clock,
+  FileQuestion, Hourglass, ScrollText,
+} from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { listMyAssignments } from '@/lib/assignments';
+import { listMyQuizzes } from '@/lib/quizzes';
 import { useAuth } from '@/lib/auth-context';
-import type { MyAssignment } from '@/lib/types';
+import type { MyAssignment, MyQuiz } from '@/lib/types';
 
 type FilterKey = 'all' | 'pending' | 'submitted' | 'graded' | 'overdue';
+type TabKey = 'assignments' | 'exams';
 
 export function AssessmentPage() {
   const { user } = useAuth();
   const isStudent = user?.role === 'STUDENT';
-  const [items, setItems] = useState<MyAssignment[] | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab: TabKey = searchParams.get('tab') === 'exams' ? 'exams' : 'assignments';
+
+  const [assignments, setAssignments] = useState<MyAssignment[] | null>(null);
+  const [quizzes, setQuizzes] = useState<MyQuiz[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>('all');
   const [classFilter, setClassFilter] = useState<string>('all');
@@ -19,20 +28,41 @@ export function AssessmentPage() {
   useEffect(() => {
     let cancelled = false;
     listMyAssignments()
-      .then((rows) => { if (!cancelled) setItems(rows); })
+      .then((rows) => { if (!cancelled) setAssignments(rows); })
       .catch(() => { if (!cancelled) setError('Could not load your coursework'); });
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    listMyQuizzes()
+      .then((rows) => { if (!cancelled) setQuizzes(rows); })
+      .catch(() => { /* non-fatal */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'exams' && filter === 'graded') setFilter('all');
+  }, [tab, filter]);
+
+  function selectTab(next: TabKey) {
+    const x = new URLSearchParams(searchParams);
+    if (next === 'assignments') x.delete('tab');
+    else x.set('tab', next);
+    setSearchParams(x, { replace: true });
+  }
+
+  const activeItems = tab === 'assignments' ? assignments : quizzes;
+
   const classes = useMemo(() => {
     const map = new Map<string, string>();
-    (items ?? []).forEach((a) => map.set(a.classroom.id, a.classroom.name));
+    (activeItems ?? []).forEach((it) => map.set(it.classroom.id, it.classroom.name));
     return Array.from(map, ([id, name]) => ({ id, name }));
-  }, [items]);
+  }, [activeItems]);
 
-  const filtered = useMemo(() => {
-    if (!items) return [];
-    return items.filter((a) => {
+  const filteredAssignments = useMemo(() => {
+    if (!assignments) return [];
+    return assignments.filter((a) => {
       if (classFilter !== 'all' && a.classroom.id !== classFilter) return false;
       if (filter === 'all') return true;
       const sub = a.mySubmission;
@@ -43,7 +73,30 @@ export function AssessmentPage() {
       if (filter === 'graded') return !!sub && sub.grade != null;
       return true;
     });
-  }, [items, filter, classFilter]);
+  }, [assignments, filter, classFilter]);
+
+  const filteredQuizzes = useMemo(() => {
+    if (!quizzes) return [];
+    return quizzes.filter((q) => {
+      if (classFilter !== 'all' && q.classroom.id !== classFilter) return false;
+      if (filter === 'all') return true;
+      const att = q.myAttempt;
+      const overdue = !!(q.dueDate && !att?.submittedAt && new Date(q.dueDate).getTime() < Date.now());
+      if (filter === 'pending') return !att?.submittedAt && !overdue;
+      if (filter === 'overdue') return overdue;
+      if (filter === 'submitted') return !!att?.submittedAt;
+      return false;
+    });
+  }, [quizzes, filter, classFilter]);
+
+  const filterKeys: FilterKey[] = isStudent
+    ? tab === 'assignments'
+      ? ['all', 'pending', 'overdue', 'submitted', 'graded']
+      : ['all', 'pending', 'overdue', 'submitted']
+    : ['all'];
+
+  const loading = tab === 'assignments' ? assignments === null : quizzes === null;
+  const filtered = tab === 'assignments' ? filteredAssignments : filteredQuizzes;
 
   return (
     <div className="flex flex-col gap-6">
@@ -59,11 +112,33 @@ export function AssessmentPage() {
         </div>
       </div>
 
+      <div className="border-b border-foreground/10">
+        <div className="flex gap-1">
+          {([
+            { id: 'assignments', label: `Assignments${assignments ? ` (${assignments.length})` : ''}`, icon: ClipboardList },
+            { id: 'exams', label: `Exams${quizzes ? ` (${quizzes.length})` : ''}`, icon: ScrollText },
+          ] as const).map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => selectTab(t.id)}
+                className={
+                  'inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ' +
+                  (active ? 'border-brand text-brand' : 'border-transparent text-muted-foreground hover:text-foreground')
+                }
+              >
+                <Icon className="h-4 w-4" /> {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
-        {(isStudent
-          ? (['all', 'pending', 'overdue', 'submitted', 'graded'] as FilterKey[])
-          : (['all'] as FilterKey[])
-        ).map((k) => (
+        {filterKeys.map((k) => (
           <button
             key={k}
             type="button"
@@ -86,22 +161,28 @@ export function AssessmentPage() {
       </div>
 
       {error && <div className="text-sm text-destructive">{error}</div>}
-      {items === null && !error && <div className="text-sm text-muted-foreground">Loading…</div>}
-      {items && filtered.length === 0 && (
+      {loading && !error && <div className="text-sm text-muted-foreground">Loading…</div>}
+      {!loading && filtered.length === 0 && (
         <Card className="text-center py-10">
           <div className="mx-auto h-12 w-12 rounded-2xl bg-brand/15 text-brand grid place-items-center mb-3">
-            <ClipboardList className="h-6 w-6" />
+            {tab === 'assignments' ? <ClipboardList className="h-6 w-6" /> : <ScrollText className="h-6 w-6" />}
           </div>
           <h3 className="font-semibold">Nothing here yet</h3>
           <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-            {filter === 'all' ? 'No coursework posted across your classes.' : 'No items match this filter.'}
+            {filter === 'all'
+              ? (tab === 'assignments'
+                  ? 'No assignments posted across your classes.'
+                  : 'No exams posted across your classes.')
+              : 'No items match this filter.'}
           </p>
         </Card>
       )}
 
-      {items && filtered.length > 0 && (
+      {!loading && filtered.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2">
-          {filtered.map((a) => <AssignmentRow key={a.id} a={a} isStudent={isStudent} />)}
+          {tab === 'assignments'
+            ? (filtered as MyAssignment[]).map((a) => <AssignmentRow key={a.id} a={a} isStudent={isStudent} />)
+            : (filtered as MyQuiz[]).map((q) => <QuizRow key={q.id} q={q} isStudent={isStudent} />)}
         </div>
       )}
     </div>
@@ -150,6 +231,56 @@ function AssignmentRow({ a, isStudent }: { a: MyAssignment; isStudent: boolean }
                 <span className={`inline-flex items-center gap-1 ${overdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
                   <CalendarClock className="h-3.5 w-3.5" />
                   {new Date(a.dueDate).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                </span>
+              )}
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${tone}`}>
+                <status.icon className="h-3.5 w-3.5" /> {status.label}
+              </span>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </Link>
+  );
+}
+
+function QuizRow({ q, isStudent }: { q: MyQuiz; isStudent: boolean }) {
+  const att = q.myAttempt;
+  const overdue = !!(q.dueDate && !att?.submittedAt && new Date(q.dueDate).getTime() < Date.now());
+  const status = isStudent
+    ? att?.submittedAt
+      ? att.score != null
+        ? { label: `Score · ${att.score}/${att.totalPoints}`, tone: 'success' as const, icon: CheckCircle2 }
+        : { label: att.isLate ? 'Submitted (late)' : 'Submitted', tone: 'muted' as const, icon: CheckCircle2 }
+      : overdue
+        ? { label: 'Overdue', tone: 'destructive' as const, icon: Clock }
+        : { label: 'Pending', tone: 'brand' as const, icon: Clock }
+    : { label: `${q._count?.attempts ?? 0} attempt${q._count?.attempts === 1 ? '' : 's'}`, tone: 'muted' as const, icon: CheckCircle2 };
+  const tone = status.tone === 'destructive' ? 'bg-destructive/15 text-destructive'
+    : status.tone === 'success' ? 'bg-emerald-500/15 text-emerald-600'
+    : status.tone === 'brand' ? 'bg-brand/15 text-brand'
+    : 'bg-muted text-muted-foreground';
+
+  return (
+    <Link to={`/classes/${q.classroomId}/quizzes/${q.id}`} className="group">
+      <Card className="transition-transform group-hover:-translate-y-0.5 group-hover:shadow-glass-lg">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-xl bg-brand/15 text-brand grid place-items-center shrink-0">
+            <FileQuestion className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold truncate">{q.title}</div>
+            <div className="text-xs text-muted-foreground truncate">{q.classroom.name}</div>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+              {q.dueDate && (
+                <span className={`inline-flex items-center gap-1 ${overdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+                  <CalendarClock className="h-3.5 w-3.5" />
+                  {new Date(q.dueDate).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                </span>
+              )}
+              {q.timeLimitMinutes && (
+                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                  <Hourglass className="h-3.5 w-3.5" /> {q.timeLimitMinutes} min
                 </span>
               )}
               <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${tone}`}>

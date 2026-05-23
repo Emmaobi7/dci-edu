@@ -20,28 +20,36 @@ export async function warmDatabase(attempts = 5): Promise<void> {
 
 export async function registerAgent(
   app: Express,
-  opts: { name: string; email: string; role?: 'TEACHER' | 'STUDENT' },
+  opts: { name: string; email: string; role?: 'TEACHER' | 'STUDENT' | 'ADMIN' },
 ) {
   const agent = request.agent(app);
   const role = opts.role ?? 'STUDENT';
   const [firstName, ...rest] = opts.name.split(/\s+/);
   const surname = rest.join(' ') || 'Student';
-  const payload: Record<string, string> = {
+  const payload = {
+    firstName: firstName ?? opts.name,
+    surname,
     email: opts.email,
     password: TEST_PASSWORD,
-    role,
   };
-  if (role === 'STUDENT') {
-    payload.firstName = firstName ?? opts.name;
-    payload.surname = surname;
-  } else {
-    payload.name = opts.name;
-  }
   const res = await agent.post('/api/auth/register').send(payload);
   if (res.status !== 201) {
     throw new Error(`registerAgent failed: ${res.status} ${JSON.stringify(res.body)}`);
   }
-  return { agent, user: res.body.user as { id: string; email: string; name: string; role: string } };
+  let user = res.body.user as { id: string; email: string; name: string; role: string };
+  if (role !== 'STUDENT') {
+    // Auth register always creates STUDENTs; promote via DB then re-login so the
+    // JWT cookie reflects the new role.
+    await prisma.user.update({ where: { id: user.id }, data: { role } });
+    const loginRes = await agent
+      .post('/api/auth/login')
+      .send({ email: opts.email, password: TEST_PASSWORD });
+    if (loginRes.status !== 200) {
+      throw new Error(`registerAgent re-login failed: ${loginRes.status} ${JSON.stringify(loginRes.body)}`);
+    }
+    user = loginRes.body.user as { id: string; email: string; name: string; role: string };
+  }
+  return { agent, user };
 }
 
 export async function cleanupByTag(tag: string) {

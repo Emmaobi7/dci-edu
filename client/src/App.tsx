@@ -3,6 +3,7 @@ import { AuthProvider } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { PublicOnlyRoute } from '@/components/PublicOnlyRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { LandingPage } from '@/pages/LandingPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { DashboardPage } from '@/pages/DashboardPage';
@@ -15,7 +16,6 @@ import { QuizDetailPage } from '@/pages/QuizDetailPage';
 import { TeacherAttemptPage } from '@/pages/TeacherAttemptPage';
 import { LiveClassesPage } from '@/pages/LiveClassesPage';
 import { AssessmentPage } from '@/pages/AssessmentPage';
-import { ExamsPage } from '@/pages/ExamsPage';
 import { CalendarPage } from '@/pages/CalendarPage';
 import { ResourcesPage } from '@/pages/ResourcesPage';
 import { HelpPage } from '@/pages/HelpPage';
@@ -30,6 +30,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route element={<PublicOnlyRoute />}>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
           </Route>
@@ -46,7 +47,7 @@ export default function App() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/live-classes" element={<LiveClassesPage />} />
               <Route path="/assessment" element={<AssessmentPage />} />
-              <Route path="/exams" element={<ExamsPage />} />
+              <Route path="/exams" element={<Navigate to="/assessment?tab=exams" replace />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/resources" element={<ResourcesPage />} />
               <Route path="/help" element={<HelpPage />} />
@@ -59,7 +60,6 @@ export default function App() {
             </Route>
           </Route>
 
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>

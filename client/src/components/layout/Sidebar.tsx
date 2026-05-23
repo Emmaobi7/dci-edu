@@ -10,7 +10,6 @@ import {
   LifeBuoy,
   Library,
   School,
-  ScrollText,
   Shield,
   Users,
   Video,
@@ -24,20 +23,20 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   roles?: Role[];
+  hideForRoles?: Role[];
   end?: boolean;
 }
 
 const items: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/classes', label: 'Classes', icon: BookOpen },
+  { to: '/classes', label: 'Classes', icon: BookOpen, hideForRoles: ['ADMIN'] },
   { to: '/live-classes', label: 'Live Classes', icon: Video },
-  { to: '/notifications', label: 'Notifications', icon: Bell },
-  { to: '/assessment', label: 'Assessment', icon: ClipboardList },
-  { to: '/exams', label: 'Exams', icon: ScrollText },
+  { to: '/notifications', label: 'Notifications', icon: Bell, hideForRoles: ['ADMIN'] },
+  { to: '/assessment', label: 'Assessment', icon: ClipboardList, hideForRoles: ['ADMIN'] },
   { to: '/calendar', label: 'Calendar', icon: CalendarDays },
   { to: '/resources', label: 'Resources', icon: Library },
   { to: '/help', label: 'Help / Guard', icon: LifeBuoy },
-  { to: '/students', label: 'Students', icon: GraduationCap, roles: ['TEACHER', 'ADMIN'] },
+  { to: '/students', label: 'Students', icon: GraduationCap, roles: ['TEACHER'] },
   { to: '/users', label: 'Users', icon: Users, roles: ['ADMIN'] },
   { to: '/admin/classes', label: 'All classes', icon: School, roles: ['ADMIN'] },
   { to: '/admin/audit', label: 'Audit log', icon: FileSpreadsheet, roles: ['ADMIN'] },
@@ -46,15 +45,23 @@ const items: NavItem[] = [
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { user } = useAuth();
-  const visible = items.filter((i) => !i.roles || (user && i.roles.includes(user.role)));
+  const visible = items.filter((i) => {
+    if (i.roles && (!user || !i.roles.includes(user.role))) return false;
+    if (i.hideForRoles && user && i.hideForRoles.includes(user.role)) return false;
+    return true;
+  });
 
   return (
     <aside className="glass-strong h-full w-64 shrink-0 rounded-2xl p-4 flex flex-col gap-2">
       <div className="px-2 py-3">
         <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-xl bg-brand text-white grid place-items-center font-bold shadow-glass-lg">W</div>
+          <img
+            src="/wapcp2-removebg-preview-Ci4PO0se.png"
+            alt="WAPCPharm"
+            className="h-9 w-9 rounded-xl object-cover shadow-glass-lg"
+          />
           <div>
-            <div className="font-semibold leading-tight">Wapcharm</div>
+            <div className="font-semibold leading-tight">WAPCPharm</div>
             <div className="text-xs text-muted-foreground">Classroom</div>
           </div>
         </div>
