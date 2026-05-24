@@ -16,6 +16,13 @@ const EnvSchema = z.object({
   BOOTSTRAP_ADMIN_EMAIL: z.string().trim().toLowerCase().email().optional(),
   BOOTSTRAP_ADMIN_PASSWORD: z.string().min(8).max(128).optional(),
   BOOTSTRAP_ADMIN_NAME: z.string().trim().min(1).max(100).optional(),
+  // Outbound email (Brevo SMTP). All optional; missing config disables sending.
+  SMTP_HOST: z.string().min(1).default('smtp-relay.brevo.com'),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().min(1).optional(),
+  SMTP_PASS: z.string().min(1).optional(),
+  MAIL_FROM: z.string().min(1).optional(),
+  APP_BASE_URL: z.string().url().default('http://localhost:5173'),
 });
 
 const parsed = EnvSchema.safeParse(process.env);

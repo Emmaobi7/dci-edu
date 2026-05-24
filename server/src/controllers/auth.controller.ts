@@ -1,11 +1,25 @@
+import { createHash, randomBytes } from 'node:crypto';
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db/prisma.js';
+import { env } from '../config/env.js';
 import { signToken } from '../utils/jwt.js';
 import { AUTH_COOKIE, authCookieOptions, clearCookieOptions } from '../utils/cookies.js';
 import { HttpError } from '../utils/HttpError.js';
-import { loginSchema, registerSchema } from '../schemas/auth.schema.js';
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+} from '../schemas/auth.schema.js';
 import { toUserDto, userDtoSelect } from '../utils/userDto.js';
+import { sendPasswordResetEmail } from '../utils/email.js';
+
+const PASSWORD_RESET_TTL_MINUTES = 30;
+
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
 
 export async function register(req: Request, res: Response): Promise<void> {
   const data = registerSchema.parse(req.body);
@@ -65,4 +79,74 @@ export async function me(req: Request, res: Response): Promise<void> {
   });
   if (!user) throw new HttpError(401, 'Not authenticated');
   res.json({ user: toUserDto(user) });
+}
+
+export async function forgotPassword(req: Request, res: Response): Promise<void> {
+  const { email } = forgotPasswordSchema.parse(req.body);
+
+  // Always respond the same way to avoid email enumeration.
+  const genericResponse = { ok: true } as const;
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, name: true, email: true, disabledAt: true },
+  });
+  if (!user || user.disabledAt) {
+    res.json(genericResponse);
+    return;
+  }
+
+  // Invalidate any unused, unexpired tokens for this user before issuing a new one.
+  await prisma.passwordResetToken.updateMany({
+    where: { userId: user.id, usedAt: null, expiresAt: { gt: new Date() } },
+    data: { usedAt: new Date() },
+  });
+
+  const rawToken = randomBytes(32).toString('hex');
+  const tokenHash = hashToken(rawToken);
+  const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
+
+  await prisma.passwordResetToken.create({
+    data: { userId: user.id, tokenHash, expiresAt },
+  });
+
+  const resetUrl = `${env.APP_BASE_URL.replace(/\/$/, '')}/reset-password?token=${rawToken}`;
+  await sendPasswordResetEmail(user.email, user.name, resetUrl, PASSWORD_RESET_TTL_MINUTES);
+
+  res.json(genericResponse);
+}
+
+export async function resetPassword(req: Request, res: Response): Promise<void> {
+  const { token, password } = resetPasswordSchema.parse(req.body);
+  const tokenHash = hashToken(token);
+
+  const record = await prisma.passwordResetToken.findUnique({
+    where: { tokenHash },
+    select: {
+      id: true,
+      userId: true,
+      usedAt: true,
+      expiresAt: true,
+      user: { select: { id: true, disabledAt: true } },
+    },
+  });
+  if (!record || record.usedAt || record.expiresAt < new Date() || !record.user) {
+    throw new HttpError(400, 'This reset link is invalid or has expired');
+  }
+  if (record.user.disabledAt) {
+    throw new HttpError(403, 'This account has been suspended. Contact an administrator.');
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: record.userId }, data: { passwordHash } }),
+    prisma.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
+    // Invalidate any other outstanding tokens for this user.
+    prisma.passwordResetToken.updateMany({
+      where: { userId: record.userId, usedAt: null, id: { not: record.id } },
+      data: { usedAt: new Date() },
+    }),
+  ]);
+
+  res.json({ ok: true });
 }
