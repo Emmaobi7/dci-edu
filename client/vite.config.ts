@@ -7,6 +7,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // recharts peer dep — not hoisted by npm workspaces, resolve explicitly
+      'react-is': path.resolve(__dirname, '../node_modules/react-is'),
     },
   },
   server: {
