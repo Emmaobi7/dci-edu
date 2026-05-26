@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { FileText } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
 import { resolveApiUrl } from '@/lib/api';
 import { getClassroomStudentProfile } from '@/lib/profile';
-import type { User } from '@/lib/types';
+import type { StudentDocumentInfo, User } from '@/lib/types';
 
 interface Props {
   open: boolean;
@@ -65,11 +66,51 @@ export function StudentProfileDialog({ open, classroomId, studentId, onClose }: 
             <Row label="Position at WAPCP" value={profile.positionAtWapcp} />
           </Section>
           <Section title="Student record">
-            <Row label="Matriculation number" value={profile.matriculationNumber} />
+            <Row label="Registration number" value={profile.registrationNumber} />
+            <Row
+              label="Submission status"
+              value={profile.profileSubmittedAt
+                ? `Submitted on ${new Date(profile.profileSubmittedAt).toLocaleDateString()}`
+                : 'Not submitted'}
+            />
           </Section>
+          <DocumentsSection documents={profile.documents} />
         </div>
       )}
     </Dialog>
+  );
+}
+
+function DocumentsSection({ documents }: { documents: User['documents'] }) {
+  return (
+    <div className="rounded-xl bg-white/50 border border-white/60 px-3 py-2">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+        Documents
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <DocRow label="Pharmacy degree certificate" info={documents.degreeCertificate} />
+        <DocRow label="License to practice" info={documents.practiceLicense} />
+        <DocRow label="Passport photograph" info={documents.passportPhoto} />
+      </div>
+    </div>
+  );
+}
+
+function DocRow({ label, info }: { label: string; info: StudentDocumentInfo }) {
+  const url = resolveApiUrl(info.url);
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+      <span className="flex-1 min-w-0 truncate">{label}</span>
+      {info.uploaded && url ? (
+        <a href={url} target="_blank" rel="noreferrer"
+          className="text-xs font-medium text-brand hover:underline">
+          {info.originalName ? 'View' : 'View'}
+        </a>
+      ) : (
+        <span className="text-xs text-muted-foreground/70 italic">Not uploaded</span>
+      )}
+    </div>
   );
 }
 

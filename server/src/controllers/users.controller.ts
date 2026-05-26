@@ -33,9 +33,16 @@ const adminUserSelect = Prisma.validator<Prisma.UserSelect>()({
   country: true,
   placeOfWork: true,
   positionAtWapcp: true,
-  matriculationNumber: true,
+  registrationNumber: true,
   topics: true,
   avatarStoredName: true,
+  profileSubmittedAt: true,
+  degreeCertificateStoredName: true,
+  degreeCertificateOriginalName: true,
+  practiceLicenseStoredName: true,
+  practiceLicenseOriginalName: true,
+  passportPhotoStoredName: true,
+  passportPhotoOriginalName: true,
   createdAt: true,
   _count: { select: { ownedClassrooms: true, enrolments: true } },
 });
@@ -259,7 +266,7 @@ export async function exportUsersCsv(req: Request, res: Response): Promise<void>
       country: true,
       placeOfWork: true,
       positionAtWapcp: true,
-      matriculationNumber: true,
+      registrationNumber: true,
       topics: true,
       disabledAt: true,
       createdAt: true,
@@ -268,14 +275,14 @@ export async function exportUsersCsv(req: Request, res: Response): Promise<void>
 
   const header = [
     'email', 'role', 'name', 'firstName', 'surname', 'title', 'phone',
-    'country', 'placeOfWork', 'positionAtWapcp', 'matriculationNumber',
+    'country', 'placeOfWork', 'positionAtWapcp', 'registrationNumber',
     'topics', 'disabled', 'createdAt',
   ];
   const rows: (string | null)[][] = [header];
   for (const u of users) {
     rows.push([
       u.email, u.role, u.name, u.firstName, u.surname, u.title, u.phone,
-      u.country, u.placeOfWork, u.positionAtWapcp, u.matriculationNumber,
+      u.country, u.placeOfWork, u.positionAtWapcp, u.registrationNumber,
       u.topics, u.disabledAt ? 'true' : 'false', u.createdAt.toISOString(),
     ]);
   }

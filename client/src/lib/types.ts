@@ -1,5 +1,22 @@
 export type Role = 'ADMIN' | 'TEACHER' | 'STUDENT';
 
+export type StudentDocumentKind =
+  | 'degree-certificate'
+  | 'practice-license'
+  | 'passport-photo';
+
+export interface StudentDocumentInfo {
+  uploaded: boolean;
+  originalName: string | null;
+  url: string | null;
+}
+
+export interface StudentDocuments {
+  degreeCertificate: StudentDocumentInfo;
+  practiceLicense: StudentDocumentInfo;
+  passportPhoto: StudentDocumentInfo;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -13,9 +30,11 @@ export interface User {
   country: string | null;
   placeOfWork: string | null;
   positionAtWapcp: string | null;
-  matriculationNumber: string | null;
+  registrationNumber: string | null;
   topics: string | null;
   avatarUrl: string | null;
+  profileSubmittedAt: string | null;
+  documents: StudentDocuments;
 }
 
 export type ProfileField =
@@ -27,7 +46,7 @@ export type ProfileField =
   | 'country'
   | 'placeOfWork'
   | 'positionAtWapcp'
-  | 'matriculationNumber'
+  | 'registrationNumber'
   | 'topics';
 
 export type ProfileUpdate = Partial<Record<ProfileField, string | null>>;

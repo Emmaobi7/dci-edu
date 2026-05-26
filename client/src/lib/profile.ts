@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { ProfileUpdate, User } from './types';
+import type { ProfileUpdate, StudentDocumentKind, User } from './types';
 
 export async function getMyProfile(): Promise<User> {
   const { data } = await api.get<{ user: User }>('/me/profile');
@@ -29,5 +29,24 @@ export async function uploadAvatar(file: File): Promise<User> {
 
 export async function deleteAvatar(): Promise<User> {
   const { data } = await api.delete<{ user: User }>('/me/avatar');
+  return data.user;
+}
+
+export async function uploadStudentDocument(kind: StudentDocumentKind, file: File): Promise<User> {
+  const form = new FormData();
+  form.append('file', file);
+  const { data } = await api.post<{ user: User }>(`/me/documents/${kind}`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data.user;
+}
+
+export async function deleteStudentDocument(kind: StudentDocumentKind): Promise<User> {
+  const { data } = await api.delete<{ user: User }>(`/me/documents/${kind}`);
+  return data.user;
+}
+
+export async function submitMyProfile(): Promise<User> {
+  const { data } = await api.post<{ user: User }>('/me/profile/submit');
   return data.user;
 }

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { requireAuth } from '../middleware/auth.js';
-import { getUserAvatar } from '../controllers/profile.controller.js';
+import { getStudentDocument, getUserAvatar } from '../controllers/profile.controller.js';
 import { csvUpload } from '../utils/uploads.js';
 import {
   adminCreateUser,
@@ -26,5 +26,6 @@ router.post('/:id/password', asyncHandler(resetUserPassword));
 router.post('/:id/disable', asyncHandler(disableUser));
 router.post('/:id/enable', asyncHandler(enableUser));
 router.get('/:userId/avatar', asyncHandler(getUserAvatar));
+router.get('/:userId/documents/:kind', asyncHandler(getStudentDocument));
 
 export default router;

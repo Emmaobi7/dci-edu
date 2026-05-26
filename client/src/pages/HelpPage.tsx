@@ -22,7 +22,7 @@ const STUDENT_TOPICS: Topic[] = [
   { icon: ClipboardList, title: 'Assessment', body: 'One page with two tabs: Assignments and Exams. Filter by Pending, Overdue, Submitted, or Graded. Click an item to open it, upload your submission (PDF/DOC/DOCX), and see your grade once a faculty has marked it.' },
   { icon: CalendarDays, title: 'Calendar', body: 'A month view of due dates and live sessions across every class you are enrolled in. Click any item for details. Read-only — only faculty add events.' },
   { icon: Library, title: 'Resources', body: 'Reference materials your faculty has shared (documents, links, videos). Browse and download — your faculty controls what is published.' },
-  { icon: UserCircle2, title: 'Profile', body: 'Click your name in the top bar to manage your profile. Upload an avatar, set your country and matriculation number, and change your password. Keep your matriculation number accurate — it appears on your submissions.' },
+  { icon: UserCircle2, title: 'Profile', body: 'Click your name in the top bar to manage your profile. Upload an avatar, set your country and registration number, and upload the three required documents: your pharmacy degree certificate, license to practice, and passport photograph. Once everything is complete, use “Submit profile” to lock your details — after that, only an administrator can make further changes.' },
 ];
 
 const TEACHER_TOPICS: Topic[] = [

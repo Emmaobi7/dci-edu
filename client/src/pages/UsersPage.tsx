@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import {
   Download,
+  Eye,
   KeyRound,
   MoreHorizontal,
   Pause,
@@ -31,6 +32,7 @@ import type { Role } from '@/lib/types';
 import { roleLabel } from '@/lib/utils';
 import { UserCreateDialog } from '@/components/UserCreateDialog';
 import { ResetPasswordDialog } from '@/components/ResetPasswordDialog';
+import { AdminUserDetailsDialog } from '@/components/AdminUserDetailsDialog';
 
 type RoleFilter = 'all' | Role;
 
@@ -50,6 +52,7 @@ export function UsersPage() {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [resetTarget, setResetTarget] = useState<AdminUser | null>(null);
+  const [detailsTarget, setDetailsTarget] = useState<AdminUser | null>(null);
   const [importBusy, setImportBusy] = useState(false);
   const [importResult, setImportResult] = useState<ImportSummary | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -248,9 +251,15 @@ export function UsersPage() {
             onChangeRole={onChangeRole}
             onResetPassword={(u) => setResetTarget(u)}
             onToggleDisabled={onToggleDisabled}
+            onViewDetails={(u) => setDetailsTarget(u)}
           />
         )}
       </Card>
+
+      <AdminUserDetailsDialog
+        user={detailsTarget}
+        onClose={() => setDetailsTarget(null)}
+      />
 
       <UserCreateDialog
         open={createOpen}
@@ -280,6 +289,7 @@ interface TableProps {
   onChangeRole: (u: AdminUser, role: Role) => void;
   onResetPassword: (u: AdminUser) => void;
   onToggleDisabled: (u: AdminUser) => void;
+  onViewDetails: (u: AdminUser) => void;
 }
 
 function UsersTable({
@@ -289,6 +299,7 @@ function UsersTable({
   onChangeRole,
   onResetPassword,
   onToggleDisabled,
+  onViewDetails,
 }: TableProps) {
   return (
     <div className="overflow-x-auto -mx-2">
@@ -360,9 +371,11 @@ function UsersTable({
                 <td className="px-2 py-2 text-right">
                   <RowActionsMenu
                     user={u}
-                    disabled={isMe || isPending}
+                    disabled={isPending}
+                    selfActionsDisabled={isMe}
                     onResetPassword={() => onResetPassword(u)}
                     onToggleDisabled={() => onToggleDisabled(u)}
+                    onViewDetails={() => onViewDetails(u)}
                   />
                 </td>
               </tr>
@@ -377,11 +390,15 @@ function UsersTable({
 interface MenuProps {
   user: AdminUser;
   disabled: boolean;
+  selfActionsDisabled: boolean;
   onResetPassword: () => void;
   onToggleDisabled: () => void;
+  onViewDetails: () => void;
 }
 
-function RowActionsMenu({ user, disabled, onResetPassword, onToggleDisabled }: MenuProps) {
+function RowActionsMenu({
+  user, disabled, selfActionsDisabled, onResetPassword, onToggleDisabled, onViewDetails,
+}: MenuProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -409,15 +426,24 @@ function RowActionsMenu({ user, disabled, onResetPassword, onToggleDisabled }: M
         <div className="absolute right-0 z-20 mt-1 min-w-[180px] rounded-xl border border-white/60 bg-white/95 backdrop-blur shadow-glass-lg p-1 text-sm">
           <button
             type="button"
-            onClick={() => { setOpen(false); onResetPassword(); }}
+            onClick={() => { setOpen(false); onViewDetails(); }}
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-brand/10"
+          >
+            <Eye className="h-4 w-4" /> View details
+          </button>
+          <button
+            type="button"
+            disabled={selfActionsDisabled}
+            onClick={() => { setOpen(false); onResetPassword(); }}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-brand/10 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <KeyRound className="h-4 w-4" /> Reset password
           </button>
           <button
             type="button"
+            disabled={selfActionsDisabled}
             onClick={() => { setOpen(false); onToggleDisabled(); }}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-brand/10"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-brand/10 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {user.disabledAt ? (
               <><Play className="h-4 w-4" /> Reactivate</>

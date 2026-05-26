@@ -7,7 +7,8 @@ export type StorageKind =
   | 'announcement-images'
   | 'announcement-docs'
   | 'resource-docs'
-  | 'avatars';
+  | 'avatars'
+  | 'student-documents';
 
 export interface ObjectBlob {
   body: Buffer;

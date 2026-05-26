@@ -42,6 +42,18 @@ const ALLOWED_DOC_EXTENSIONS = new Set<string>([
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const MAX_ANNOUNCEMENT_DOC_BYTES = 20 * 1024 * 1024;
+const MAX_STUDENT_DOC_BYTES = 5 * 1024 * 1024;
+const MAX_PASSPORT_PHOTO_BYTES = 2 * 1024 * 1024;
+
+const ALLOWED_STUDENT_DOC_MIMETYPES = new Set<string>([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+]);
+const ALLOWED_STUDENT_DOC_EXTENSIONS = new Set<string>([
+  '.pdf', '.jpg', '.jpeg', '.png', '.webp',
+]);
 
 function safeBaseName(original: string): string {
   const base = path.basename(original).replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 120);
@@ -110,6 +122,27 @@ export const resourceDocUpload = multer({
 export const avatarUpload = multer({
   storage: memoryStorage,
   limits: { fileSize: MAX_AVATAR_BYTES, files: 1 },
+  fileFilter: imageFilter,
+});
+
+function studentDocFilter(_req: Request, file: Express.Multer.File, cb: FileFilterCallback): void {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (!ALLOWED_STUDENT_DOC_MIMETYPES.has(file.mimetype) || !ALLOWED_STUDENT_DOC_EXTENSIONS.has(ext)) {
+    cb(new HttpError(400, 'Only PDF, JPG, PNG or WEBP files are allowed'));
+    return;
+  }
+  cb(null, true);
+}
+
+export const studentDocumentUpload = multer({
+  storage: memoryStorage,
+  limits: { fileSize: MAX_STUDENT_DOC_BYTES, files: 1 },
+  fileFilter: studentDocFilter,
+});
+
+export const passportPhotoUpload = multer({
+  storage: memoryStorage,
+  limits: { fileSize: MAX_PASSPORT_PHOTO_BYTES, files: 1 },
   fileFilter: imageFilter,
 });
 

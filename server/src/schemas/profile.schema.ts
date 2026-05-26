@@ -26,7 +26,7 @@ export const updateProfileSchema = z.object({
   country: nullableTrimmed(80),
   placeOfWork: nullableTrimmed(120),
   positionAtWapcp: nullableTrimmed(100),
-  matriculationNumber: nullableTrimmed(40),
+  registrationNumber: nullableTrimmed(40),
   topics: nullableTrimmed(200),
 });
 
@@ -35,9 +35,22 @@ export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 // Fields each role may modify via PATCH /api/me/profile.
 export const STUDENT_PROFILE_FIELDS = [
   'title', 'firstName', 'surname', 'phone', 'country',
-  'placeOfWork', 'positionAtWapcp', 'matriculationNumber',
+  'placeOfWork', 'positionAtWapcp', 'registrationNumber',
 ] as const;
 
 export const TEACHER_PROFILE_FIELDS = [
   'title', 'name', 'phone', 'country', 'topics',
 ] as const;
+
+// Required for profile submission (final lock). Documents are checked separately.
+export const STUDENT_SUBMISSION_REQUIRED_FIELDS = [
+  'firstName', 'surname', 'phone', 'country',
+  'placeOfWork', 'positionAtWapcp', 'registrationNumber',
+] as const;
+
+export const STUDENT_DOCUMENT_KINDS = [
+  'degree-certificate',
+  'practice-license',
+  'passport-photo',
+] as const;
+export type StudentDocumentKind = (typeof STUDENT_DOCUMENT_KINDS)[number];

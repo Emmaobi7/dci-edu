@@ -32,10 +32,24 @@ model User {
   country              String?
   placeOfWork          String?
   positionAtWapcp      String?
-  matriculationNumber  String? @unique
+  registrationNumber   String? @unique @map("matriculationNumber")
   topics               String?
   avatarStoredName     String?
   avatarMimetype       String?
+
+  // Onboarding lock: once set, the student profile is read-only.
+  profileSubmittedAt   DateTime?
+
+  // Student onboarding documents (Supabase Storage under kind 'student-documents')
+  degreeCertificateStoredName  String?
+  degreeCertificateMimetype    String?
+  degreeCertificateOriginalName String?
+  practiceLicenseStoredName    String?
+  practiceLicenseMimetype      String?
+  practiceLicenseOriginalName  String?
+  passportPhotoStoredName      String?
+  passportPhotoMimetype        String?
+  passportPhotoOriginalName    String?
 
   ownedClassrooms   Classroom[]  @relation("ClassroomTeacher")
   moderatedClassrooms Classroom[] @relation("ClassroomModerator")

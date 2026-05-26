@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { Role } from './types';
+import type { Role, StudentDocuments } from './types';
 
 export interface AdminUser {
   id: string;
@@ -14,9 +14,11 @@ export interface AdminUser {
   country: string | null;
   placeOfWork: string | null;
   positionAtWapcp: string | null;
-  matriculationNumber: string | null;
+  registrationNumber: string | null;
   topics: string | null;
   avatarUrl: string | null;
+  profileSubmittedAt: string | null;
+  documents: StudentDocuments;
   createdAt: string;
   ownedClassroomCount: number;
   enrolmentCount: number;
