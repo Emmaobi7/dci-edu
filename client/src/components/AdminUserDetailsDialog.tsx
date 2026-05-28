@@ -1,16 +1,22 @@
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 import { FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { resolveApiUrl } from '@/lib/api';
 import { roleLabel } from '@/lib/utils';
-import type { AdminUser } from '@/lib/users';
-import type { StudentDocumentInfo } from '@/lib/types';
+import { updateUserClearance, type AdminUser } from '@/lib/users';
+import type { Clearance, StudentDocumentInfo } from '@/lib/types';
 
 interface Props {
   user: AdminUser | null;
   onClose: () => void;
+  onUpdated?: (user: AdminUser) => void;
 }
 
-export function AdminUserDetailsDialog({ user, onClose }: Props) {
+export function AdminUserDetailsDialog({ user, onClose, onUpdated }: Props) {
   const open = !!user;
   return (
     <Dialog
@@ -56,6 +62,7 @@ export function AdminUserDetailsDialog({ user, onClose }: Props) {
                 />
               </Section>
               <DocumentsSection documents={user.documents} />
+              <ClearanceSection user={user} onUpdated={onUpdated} />
             </>
           )}
           {user.role === 'TEACHER' && (
@@ -66,6 +73,85 @@ export function AdminUserDetailsDialog({ user, onClose }: Props) {
         </div>
       )}
     </Dialog>
+  );
+}
+
+function ClearanceSection({ user, onUpdated }: { user: AdminUser; onUpdated?: (u: AdminUser) => void }) {
+  const [status, setStatus] = useState<Clearance>(user.clearance);
+  const [remark, setRemark] = useState(user.clearanceRemark ?? '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    setStatus(user.clearance);
+    setRemark(user.clearanceRemark ?? '');
+    setError(null);
+    setSavedAt(null);
+  }, [user.id, user.clearance, user.clearanceRemark]);
+
+  const dirty = status !== user.clearance || (remark.trim() || '') !== (user.clearanceRemark ?? '');
+
+  async function onSave() {
+    setSaving(true); setError(null);
+    try {
+      const updated = await updateUserClearance(user.id, status, remark.trim() || null);
+      onUpdated?.(updated);
+      setSavedAt(new Date().toLocaleTimeString());
+    } catch (err) {
+      if (axios.isAxiosError(err)) setError(err.response?.data?.error ?? 'Could not update clearance');
+      else setError('Could not update clearance');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl bg-white/50 border border-white/60 px-3 py-2 flex flex-col gap-2">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Clearance</div>
+      <div className="flex flex-wrap gap-2">
+        {(['NOT_CLEARED', 'CLEARED'] as Clearance[]).map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => setStatus(c)}
+            className={
+              'rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors ' +
+              (status === c
+                ? c === 'CLEARED'
+                  ? 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30'
+                  : 'bg-rose-500/15 text-rose-700 border-rose-500/30'
+                : 'bg-white/60 border-white/70 hover:bg-white/80')
+            }
+          >
+            {c === 'CLEARED' ? 'Cleared' : 'Not cleared'}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="clearance-remark" className="text-xs">Remark (optional)</Label>
+        <Textarea
+          id="clearance-remark"
+          rows={2}
+          maxLength={1000}
+          value={remark}
+          onChange={(e) => setRemark(e.target.value)}
+          placeholder="Notes visible to the student on their profile"
+        />
+      </div>
+      {user.clearanceUpdatedAt && (
+        <div className="text-[11px] text-muted-foreground">
+          Last updated {new Date(user.clearanceUpdatedAt).toLocaleString()}
+        </div>
+      )}
+      {error && <div className="text-xs text-destructive">{error}</div>}
+      {savedAt && !error && <div className="text-xs text-emerald-700">Saved at {savedAt}</div>}
+      <div className="flex justify-end">
+        <Button size="sm" onClick={onSave} disabled={!dirty || saving}>
+          {saving ? 'Saving…' : 'Save clearance'}
+        </Button>
+      </div>
+    </div>
   );
 }
 

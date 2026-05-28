@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Activity,
+  Download,
   FileSpreadsheet,
   KeyRound,
   Library,
@@ -14,6 +15,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { listAuditEvents, type AuditAction, type AuditEvent } from '@/lib/admin';
+import { API_BASE_URL } from '@/lib/api';
 
 type ActionMeta = { label: string; short: string; icon: React.ComponentType<{ className?: string }>; tone: string };
 
@@ -76,16 +78,24 @@ export function AuditPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <div className="h-12 w-12 rounded-2xl bg-brand/15 text-brand grid place-items-center">
-          <FileSpreadsheet className="h-6 w-6" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-2xl bg-brand/15 text-brand grid place-items-center">
+            <FileSpreadsheet className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Audit log</h1>
+            <p className="text-sm text-muted-foreground">
+              Every sensitive admin action recorded automatically.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Audit log</h1>
-          <p className="text-sm text-muted-foreground">
-            Every sensitive admin action recorded automatically.
-          </p>
-        </div>
+        <a
+          href={`${API_BASE_URL}/admin/audit/export.csv`}
+          className="inline-flex items-center gap-2 rounded-xl border border-white/70 bg-white/60 px-3 py-2 text-sm font-medium hover:bg-white/80 transition-colors"
+        >
+          <Download className="h-4 w-4" /> Export CSV
+        </a>
       </div>
 
       <Card className="p-4 flex flex-col gap-4">

@@ -14,6 +14,11 @@ enum Role {
   STUDENT
 }
 
+enum Clearance {
+  NOT_CLEARED
+  CLEARED
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -39,6 +44,14 @@ model User {
 
   // Onboarding lock: once set, the student profile is read-only.
   profileSubmittedAt   DateTime?
+
+  // Student clearance (admins only set this; default not cleared for new students).
+  clearance              Clearance @default(NOT_CLEARED)
+  clearanceRemark        String?
+  clearanceUpdatedAt     DateTime?
+  clearanceUpdatedById   String?
+  clearanceUpdatedBy     User?     @relation("ClearanceUpdatedBy", fields: [clearanceUpdatedById], references: [id], onDelete: SetNull)
+  clearanceUpdatesIssued User[]    @relation("ClearanceUpdatedBy")
 
   // Student onboarding documents (Supabase Storage under kind 'student-documents')
   degreeCertificateStoredName  String?
@@ -382,6 +395,7 @@ enum AuditAction {
   USER_DISABLED
   USER_ENABLED
   USER_IMPORTED
+  USER_CLEARANCE_UPDATED
   CLASSROOM_DELETED
   RESOURCE_CREATED
   RESOURCE_DELETED

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, School } from 'lucide-react';
+import { Download, Search, School } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { listAdminClassrooms, type AdminClassroom } from '@/lib/admin';
+import { API_BASE_URL } from '@/lib/api';
 
 export function AdminClassesPage() {
   const [rows, setRows] = useState<AdminClassroom[] | null>(null);
@@ -31,16 +32,24 @@ export function AdminClassesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <div className="h-12 w-12 rounded-2xl bg-brand/15 text-brand grid place-items-center">
-          <School className="h-6 w-6" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-2xl bg-brand/15 text-brand grid place-items-center">
+            <School className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Class oversight</h1>
+            <p className="text-sm text-muted-foreground">
+              Every class on the platform with rosters and activity counts.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Class oversight</h1>
-          <p className="text-sm text-muted-foreground">
-            Every class on the platform with rosters and activity counts.
-          </p>
-        </div>
+        <a
+          href={`${API_BASE_URL}/admin/classrooms/export.csv`}
+          className="inline-flex items-center gap-2 rounded-xl border border-white/70 bg-white/60 px-3 py-2 text-sm font-medium hover:bg-white/80 transition-colors"
+        >
+          <Download className="h-4 w-4" /> Export CSV
+        </a>
       </div>
 
       <Card className="p-4 flex flex-col gap-4">

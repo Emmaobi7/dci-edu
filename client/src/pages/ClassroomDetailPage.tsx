@@ -27,6 +27,7 @@ import { InsightsTab } from '@/components/InsightsTab';
 import { ChatTab } from '@/components/ChatTab';
 import { ChatRolePill } from '@/components/ChatRoleBadge';
 import { StudentProfileDialog } from '@/components/StudentProfileDialog';
+import { FacultyBioDialog } from '@/components/FacultyBioDialog';
 
 type TabKey = 'stream' | 'overview' | 'assignments' | 'quizzes' | 'chat' | 'members' | 'insights';
 
@@ -50,6 +51,7 @@ export function ClassroomDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
+  const [facultyBioId, setFacultyBioId] = useState<string | null>(null);
 
   const isOwner = !!(classroom && user && (user.role === 'ADMIN' || user.id === classroom.teacherId));
   const isAdmin = user?.role === 'ADMIN';
@@ -235,7 +237,15 @@ export function ClassroomDetailPage() {
             <div>
               <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{classroom.name}</h1>
               <p className="text-sm text-muted-foreground mt-1 inline-flex items-center gap-2">
-                <GraduationCap className="h-4 w-4" /> {classroom.teacher.name}
+                <GraduationCap className="h-4 w-4" />
+                <button
+                  type="button"
+                  onClick={() => setFacultyBioId(classroom.teacherId)}
+                  className="hover:text-brand hover:underline transition-colors"
+                  title="View faculty profile"
+                >
+                  {classroom.teacher.name}
+                </button>
                 <span className="text-foreground/30">•</span>
                 <Users className="h-4 w-4" /> {classroom.studentCount} {classroom.studentCount === 1 ? 'student' : 'students'}
               </p>
@@ -413,6 +423,11 @@ export function ClassroomDetailPage() {
         classroomId={classroom.id}
         studentId={profileStudentId}
         onClose={() => setProfileStudentId(null)}
+      />
+      <FacultyBioDialog
+        open={facultyBioId !== null}
+        facultyId={facultyBioId}
+        onClose={() => setFacultyBioId(null)}
       />
     </div>
   );

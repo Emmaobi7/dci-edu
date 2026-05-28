@@ -46,10 +46,11 @@ export function UserCreateDialog({ open, onClose, onCreated }: Props) {
     setError(null);
     setSubmitting(true);
     try {
+      const trimmed = password.trim();
       const user =
         role === 'STUDENT'
-          ? await adminCreateUser({ role, email, password, firstName, surname })
-          : await adminCreateUser({ role, email, password, name });
+          ? await adminCreateUser({ role, email, firstName, surname, ...(trimmed ? { password: trimmed } : {}) })
+          : await adminCreateUser({ role, email, name, ...(trimmed ? { password: trimmed } : {}) });
       onCreated(user);
       reset();
     } catch (err) {
@@ -71,7 +72,7 @@ export function UserCreateDialog({ open, onClose, onCreated }: Props) {
         onClose();
       }}
       title="Create user"
-      description="Provision a new account for any role. The user can sign in immediately with the password below."
+      description="Provision a new account for any role. Leave the password blank to use the role-based default from the server."
     >
       <form onSubmit={onSubmit} className="flex flex-col gap-4 mt-2">
         <div className="flex flex-col gap-1.5">
@@ -121,15 +122,15 @@ export function UserCreateDialog({ open, onClose, onCreated }: Props) {
           <Input id="newEmail" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="newPassword">Password</Label>
+          <Label htmlFor="newPassword">Password <span className="text-muted-foreground font-normal">(optional)</span></Label>
           <div className="relative">
             <Input
               id="newPassword"
               type={showPassword ? 'text' : 'password'}
-              required
-              minLength={8}
+              minLength={password ? 8 : undefined}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Leave blank to use the role default"
               className="pr-10"
             />
             <button
@@ -143,7 +144,7 @@ export function UserCreateDialog({ open, onClose, onCreated }: Props) {
             </button>
           </div>
           <span className="text-xs text-muted-foreground">
-            At least 8 characters. Share this with the user securely.
+            If left blank, the server applies the role-based default (configured via env vars). If typed, must be at least 8 characters.
           </span>
         </div>
 

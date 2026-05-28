@@ -2,17 +2,25 @@ import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../db/prisma.js';
+import { env } from '../config/env.js';
 import { HttpError } from '../utils/HttpError.js';
 import { toUserDto, userDtoSelect } from '../utils/userDto.js';
 import {
   adminCreateUserSchema,
   listUsersQuerySchema,
   resetUserPasswordSchema,
+  updateUserClearanceSchema,
   updateUserRoleSchema,
 } from '../schemas/users.schema.js';
 import { writeAudit } from '../utils/audit.js';
 import { parseCsv, toCsv } from '../utils/csv.js';
 import { randomBytes } from 'node:crypto';
+
+function defaultPasswordForRole(role: 'STUDENT' | 'TEACHER' | 'ADMIN'): string {
+  if (role === 'STUDENT') return env.DEFAULT_STUDENT_PASSWORD;
+  if (role === 'TEACHER') return env.DEFAULT_FACULTY_PASSWORD;
+  return generatePassword();
+}
 
 function requireAdmin(req: Request) {
   if (!req.user) throw new HttpError(401, 'Not authenticated');
@@ -43,6 +51,9 @@ const adminUserSelect = Prisma.validator<Prisma.UserSelect>()({
   practiceLicenseOriginalName: true,
   passportPhotoStoredName: true,
   passportPhotoOriginalName: true,
+  clearance: true,
+  clearanceRemark: true,
+  clearanceUpdatedAt: true,
   createdAt: true,
   _count: { select: { ownedClassrooms: true, enrolments: true } },
 });
@@ -133,7 +144,9 @@ export async function adminCreateUser(req: Request, res: Response): Promise<void
   const existing = await prisma.user.findUnique({ where: { email: data.email } });
   if (existing) throw new HttpError(409, 'Email already registered');
 
-  const passwordHash = await bcrypt.hash(data.password, 12);
+  const usedDefaultPassword = !data.password;
+  const password = data.password ?? defaultPasswordForRole(data.role);
+  const passwordHash = await bcrypt.hash(password, 12);
   const name =
     data.role === 'STUDENT'
       ? `${data.firstName} ${data.surname}`.replace(/\s+/g, ' ').trim()
@@ -158,10 +171,82 @@ export async function adminCreateUser(req: Request, res: Response): Promise<void
     targetType: 'User',
     targetId: created.id,
     summary: `Created ${data.role.toLowerCase()} ${created.email}`,
-    metadata: { role: data.role },
+    metadata: { role: data.role, defaultPassword: usedDefaultPassword },
   });
 
   res.status(201).json({ user: toAdminUserDto(created) });
+}
+
+export async function updateUserClearance(req: Request, res: Response): Promise<void> {
+  const admin = requireAdmin(req);
+  const { id: targetId } = req.params as { id: string };
+  if (!targetId) throw new HttpError(400, 'User id is required');
+  const { status, remark } = updateUserClearanceSchema.parse(req.body);
+
+  const target = await prisma.user.findUnique({
+    where: { id: targetId },
+    select: { id: true, email: true, role: true, clearance: true },
+  });
+  if (!target) throw new HttpError(404, 'User not found');
+  if (target.role !== 'STUDENT') {
+    throw new HttpError(400, 'Clearance only applies to student accounts');
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: targetId },
+    data: {
+      clearance: status,
+      clearanceRemark: remark?.trim() ? remark.trim() : null,
+      clearanceUpdatedAt: new Date(),
+      clearanceUpdatedById: admin.id,
+    },
+    select: adminUserSelect,
+  });
+
+  await writeAudit({
+    action: 'USER_CLEARANCE_UPDATED',
+    actorId: admin.id,
+    targetUserId: targetId,
+    targetType: 'User',
+    targetId,
+    summary: `${target.email}: ${target.clearance} → ${status}`,
+    metadata: { previous: target.clearance, next: status, hasRemark: !!remark?.trim() },
+  });
+
+  res.json({ user: toAdminUserDto(updated) });
+}
+
+export async function getFacultyBio(req: Request, res: Response): Promise<void> {
+  if (!req.user) throw new HttpError(401, 'Not authenticated');
+  const { userId } = req.params as { userId: string };
+  if (!userId) throw new HttpError(400, 'User id is required');
+
+  const target = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true, role: true, name: true, title: true, topics: true,
+      country: true, placeOfWork: true, positionAtWapcp: true,
+      avatarStoredName: true,
+    },
+  });
+  if (!target || target.role !== 'TEACHER') {
+    throw new HttpError(404, 'Faculty member not found');
+  }
+
+  res.json({
+    bio: {
+      id: target.id,
+      name: target.name,
+      title: target.title,
+      topics: target.topics,
+      country: target.country,
+      placeOfWork: target.placeOfWork,
+      positionAtWapcp: target.positionAtWapcp,
+      avatarUrl: target.avatarStoredName
+        ? `/users/${target.id}/avatar?v=${target.avatarStoredName.slice(0, 12)}`
+        : null,
+    },
+  });
 }
 
 export async function resetUserPassword(req: Request, res: Response): Promise<void> {
@@ -270,6 +355,9 @@ export async function exportUsersCsv(req: Request, res: Response): Promise<void>
       topics: true,
       disabledAt: true,
       createdAt: true,
+      clearance: true,
+      clearanceRemark: true,
+      clearanceUpdatedAt: true,
     },
   });
 
@@ -277,6 +365,7 @@ export async function exportUsersCsv(req: Request, res: Response): Promise<void>
     'email', 'role', 'name', 'firstName', 'surname', 'title', 'phone',
     'country', 'placeOfWork', 'positionAtWapcp', 'registrationNumber',
     'topics', 'disabled', 'createdAt',
+    'clearance', 'clearanceRemark', 'clearanceUpdatedAt',
   ];
   const rows: (string | null)[][] = [header];
   for (const u of users) {
@@ -284,6 +373,9 @@ export async function exportUsersCsv(req: Request, res: Response): Promise<void>
       u.email, u.role, u.name, u.firstName, u.surname, u.title, u.phone,
       u.country, u.placeOfWork, u.positionAtWapcp, u.registrationNumber,
       u.topics, u.disabledAt ? 'true' : 'false', u.createdAt.toISOString(),
+      u.role === 'STUDENT' ? u.clearance : '',
+      u.role === 'STUDENT' ? u.clearanceRemark : '',
+      u.role === 'STUDENT' && u.clearanceUpdatedAt ? u.clearanceUpdatedAt.toISOString() : '',
     ]);
   }
 
@@ -319,6 +411,12 @@ export async function importUsersCsv(req: Request, res: Response): Promise<void>
   const firstNameIdx = idx('firstname');
   const surnameIdx = idx('surname');
   const passwordIdx = idx('password');
+  // Accept both new and legacy column names for back-compat with older exports.
+  const registrationIdx = (() => {
+    const a = idx('registrationnumber');
+    if (a >= 0) return a;
+    return idx('matriculationnumber');
+  })();
   if (emailIdx < 0 || roleIdx < 0) {
     throw new HttpError(400, 'CSV must include at least "email" and "role" columns');
   }
@@ -345,16 +443,34 @@ export async function importUsersCsv(req: Request, res: Response): Promise<void>
       summary.errors.push({ row: rowNo, email, message: 'Missing name' });
       continue;
     }
-    const password = passwordIdx >= 0 && cols[passwordIdx]
-      ? cols[passwordIdx]!.trim()
-      : generatePassword();
-    if (password.length < 8) {
+    const passwordCell = passwordIdx >= 0 ? (cols[passwordIdx] ?? '').trim() : '';
+    // When the CSV supplies a password, enforce the standard minimum. When blank,
+    // fall back to the role-based default (which may be shorter by design).
+    const password = passwordCell || defaultPasswordForRole(role);
+    if (passwordCell && passwordCell.length < 8) {
       summary.errors.push({ row: rowNo, email, message: 'Password must be at least 8 characters' });
       continue;
     }
+    const registrationNumber = registrationIdx >= 0
+      ? (cols[registrationIdx] ?? '').trim()
+      : '';
 
     const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
     if (existing) { summary.skipped++; continue; }
+
+    if (role === 'STUDENT' && registrationNumber) {
+      const dupe = await prisma.user.findFirst({
+        where: { registrationNumber },
+        select: { id: true },
+      });
+      if (dupe) {
+        summary.errors.push({
+          row: rowNo, email,
+          message: `Registration number "${registrationNumber}" is already in use`,
+        });
+        continue;
+      }
+    }
 
     try {
       const passwordHash = await bcrypt.hash(password, 12);
@@ -366,6 +482,7 @@ export async function importUsersCsv(req: Request, res: Response): Promise<void>
           name,
           firstName: role === 'STUDENT' ? (firstName || null) : null,
           surname: role === 'STUDENT' ? (surname || null) : null,
+          registrationNumber: role === 'STUDENT' ? (registrationNumber || null) : null,
         },
       });
       summary.created++;

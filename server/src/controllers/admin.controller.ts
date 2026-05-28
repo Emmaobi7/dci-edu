@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { prisma } from '../db/prisma.js';
 import { HttpError } from '../utils/HttpError.js';
+import { toCsv } from '../utils/csv.js';
 
 function requireAdmin(req: Request) {
   if (!req.user) throw new HttpError(401, 'Not authenticated');
@@ -120,4 +121,90 @@ export async function adminListClassrooms(req: Request, res: Response): Promise<
     },
   });
   res.json({ classrooms });
+}
+
+export async function exportClassroomsCsv(req: Request, res: Response): Promise<void> {
+  requireAdmin(req);
+  const classrooms = await prisma.classroom.findMany({
+    orderBy: { createdAt: 'desc' },
+    select: {
+      name: true,
+      code: true,
+      description: true,
+      createdAt: true,
+      updatedAt: true,
+      teacher: { select: { name: true, email: true } },
+      _count: { select: { enrolments: true, assignments: true, quizzes: true } },
+    },
+  });
+
+  const header = [
+    'name', 'code', 'description',
+    'facultyName', 'facultyEmail',
+    'students', 'assignments', 'exams',
+    'createdAt', 'updatedAt',
+  ];
+  const rows: (string | number | null)[][] = [header];
+  for (const c of classrooms) {
+    rows.push([
+      c.name,
+      c.code,
+      c.description ?? '',
+      c.teacher.name,
+      c.teacher.email,
+      c._count.enrolments,
+      c._count.assignments,
+      c._count.quizzes,
+      c.createdAt.toISOString(),
+      c.updatedAt.toISOString(),
+    ]);
+  }
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="classrooms.csv"');
+  res.send(toCsv(rows));
+}
+
+export async function exportAuditCsv(req: Request, res: Response): Promise<void> {
+  requireAdmin(req);
+  const events = await prisma.auditEvent.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 10000,
+    select: {
+      action: true,
+      summary: true,
+      targetType: true,
+      targetId: true,
+      metadata: true,
+      createdAt: true,
+      actor: { select: { name: true, email: true } },
+      targetUser: { select: { name: true, email: true } },
+    },
+  });
+
+  const header = [
+    'createdAt', 'action', 'summary',
+    'actorName', 'actorEmail',
+    'targetType', 'targetId', 'targetUserName', 'targetUserEmail',
+    'metadata',
+  ];
+  const rows: (string | null)[][] = [header];
+  for (const e of events) {
+    rows.push([
+      e.createdAt.toISOString(),
+      e.action,
+      e.summary,
+      e.actor?.name ?? '',
+      e.actor?.email ?? '',
+      e.targetType ?? '',
+      e.targetId ?? '',
+      e.targetUser?.name ?? '',
+      e.targetUser?.email ?? '',
+      e.metadata == null ? '' : JSON.stringify(e.metadata),
+    ]);
+  }
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="audit-log.csv"');
+  res.send(toCsv(rows));
 }

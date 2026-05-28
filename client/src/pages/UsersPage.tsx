@@ -259,6 +259,10 @@ export function UsersPage() {
       <AdminUserDetailsDialog
         user={detailsTarget}
         onClose={() => setDetailsTarget(null)}
+        onUpdated={(u) => {
+          setUsers((rows) => (rows ?? []).map((r) => (r.id === u.id ? u : r)));
+          setDetailsTarget(u);
+        }}
       />
 
       <UserCreateDialog
@@ -339,6 +343,7 @@ function UsersTable({
                         Suspended
                       </span>
                     )}
+                    {u.role === 'STUDENT' && <ClearancePill clearance={u.clearance} />}
                   </div>
                 </td>
                 <td className="px-2 py-2 text-muted-foreground">
@@ -466,6 +471,18 @@ function RolePill({ role }: { role: Role }) {
   return (
     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${styles[role]}`}>
       {roleLabel(role)}
+    </span>
+  );
+}
+
+function ClearancePill({ clearance }: { clearance: AdminUser['clearance'] }) {
+  const cleared = clearance === 'CLEARED';
+  return (
+    <span className={
+      'rounded-full px-2 py-0.5 text-xs font-medium ' +
+      (cleared ? 'bg-emerald-500/15 text-emerald-700' : 'bg-rose-500/15 text-rose-700')
+    }>
+      {cleared ? 'Cleared' : 'Not cleared'}
     </span>
   );
 }

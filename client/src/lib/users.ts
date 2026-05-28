@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { Role, StudentDocuments } from './types';
+import type { Clearance, Role, StudentDocuments } from './types';
 
 export interface AdminUser {
   id: string;
@@ -19,9 +19,23 @@ export interface AdminUser {
   avatarUrl: string | null;
   profileSubmittedAt: string | null;
   documents: StudentDocuments;
+  clearance: Clearance;
+  clearanceRemark: string | null;
+  clearanceUpdatedAt: string | null;
   createdAt: string;
   ownedClassroomCount: number;
   enrolmentCount: number;
+}
+
+export interface FacultyBio {
+  id: string;
+  name: string;
+  title: string | null;
+  topics: string | null;
+  country: string | null;
+  placeOfWork: string | null;
+  positionAtWapcp: string | null;
+  avatarUrl: string | null;
 }
 
 export interface ListUsersQuery {
@@ -43,12 +57,26 @@ export async function updateUserRole(id: string, role: Role): Promise<AdminUser>
 }
 
 export type AdminCreateUserInput =
-  | { role: 'STUDENT'; email: string; password: string; firstName: string; surname: string }
-  | { role: 'TEACHER' | 'ADMIN'; email: string; password: string; name: string };
+  | { role: 'STUDENT'; email: string; password?: string; firstName: string; surname: string }
+  | { role: 'TEACHER' | 'ADMIN'; email: string; password?: string; name: string };
 
 export async function adminCreateUser(input: AdminCreateUserInput): Promise<AdminUser> {
   const { data } = await api.post<{ user: AdminUser }>('/users', input);
   return data.user;
+}
+
+export async function updateUserClearance(
+  id: string,
+  status: Clearance,
+  remark: string | null,
+): Promise<AdminUser> {
+  const { data } = await api.patch<{ user: AdminUser }>(`/users/${id}/clearance`, { status, remark });
+  return data.user;
+}
+
+export async function getFacultyBio(userId: string): Promise<FacultyBio> {
+  const { data } = await api.get<{ bio: FacultyBio }>(`/users/${userId}/bio`);
+  return data.bio;
 }
 
 export async function resetUserPassword(id: string, password: string): Promise<void> {

@@ -1,5 +1,7 @@
 export type Role = 'ADMIN' | 'TEACHER' | 'STUDENT';
 
+export type Clearance = 'CLEARED' | 'NOT_CLEARED';
+
 export type StudentDocumentKind =
   | 'degree-certificate'
   | 'practice-license'
@@ -35,6 +37,9 @@ export interface User {
   avatarUrl: string | null;
   profileSubmittedAt: string | null;
   documents: StudentDocuments;
+  clearance: Clearance;
+  clearanceRemark: string | null;
+  clearanceUpdatedAt: string | null;
 }
 
 export type ProfileField =

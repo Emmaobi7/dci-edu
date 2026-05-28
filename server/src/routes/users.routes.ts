@@ -8,9 +8,11 @@ import {
   disableUser,
   enableUser,
   exportUsersCsv,
+  getFacultyBio,
   importUsersCsv,
   listUsers,
   resetUserPassword,
+  updateUserClearance,
   updateUserRole,
 } from '../controllers/users.controller.js';
 
@@ -22,10 +24,12 @@ router.post('/', asyncHandler(adminCreateUser));
 router.get('/export.csv', asyncHandler(exportUsersCsv));
 router.post('/import', csvUpload.single('file'), asyncHandler(importUsersCsv));
 router.patch('/:id/role', asyncHandler(updateUserRole));
+router.patch('/:id/clearance', asyncHandler(updateUserClearance));
 router.post('/:id/password', asyncHandler(resetUserPassword));
 router.post('/:id/disable', asyncHandler(disableUser));
 router.post('/:id/enable', asyncHandler(enableUser));
 router.get('/:userId/avatar', asyncHandler(getUserAvatar));
+router.get('/:userId/bio', asyncHandler(getFacultyBio));
 router.get('/:userId/documents/:kind', asyncHandler(getStudentDocument));
 
 export default router;

@@ -3,7 +3,7 @@ import axios from 'axios';
 import {
   UserCircle2, Phone, Globe2, Briefcase, GraduationCap, Mail, BookOpen,
   Camera, Trash2, FileText, Image as ImageIcon, FileBadge2, CheckCircle2,
-  Lock, Send, Upload,
+  Lock, Send, Upload, ShieldCheck, ShieldAlert,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -17,7 +17,7 @@ import {
   updateMyProfile, uploadAvatar, uploadStudentDocument,
 } from '@/lib/profile';
 import type {
-  ProfileUpdate, Role, StudentDocumentInfo, StudentDocumentKind, User,
+  Clearance, ProfileUpdate, Role, StudentDocumentInfo, StudentDocumentKind, User,
 } from '@/lib/types';
 
 const TITLES = ['', 'Dr', 'Prof', 'Mr', 'Mrs', 'Ms', 'Miss'] as const;
@@ -77,6 +77,8 @@ export function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatarUrl ?? null);
   const [submittedAt, setSubmittedAt] = useState<string | null>(user?.profileSubmittedAt ?? null);
   const [documents, setDocuments] = useState(user?.documents ?? EMPTY_DOCS);
+  const [clearance, setClearance] = useState<Clearance>(user?.clearance ?? 'NOT_CLEARED');
+  const [clearanceRemark, setClearanceRemark] = useState<string | null>(user?.clearanceRemark ?? null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -98,6 +100,8 @@ export function ProfilePage() {
     setAvatarUrl(u.avatarUrl);
     setSubmittedAt(u.profileSubmittedAt);
     setDocuments(u.documents);
+    setClearance(u.clearance);
+    setClearanceRemark(u.clearanceRemark);
   }
 
   useEffect(() => {
@@ -261,6 +265,35 @@ export function ProfilePage() {
               Your details and documents were submitted{submittedDate ? ` on ${submittedDate}` : ''}.
               These are now locked — contact an administrator if any information needs to be changed.
             </p>
+          </div>
+        </Card>
+      )}
+
+      {!loading && role === 'STUDENT' && (
+        <Card className={
+          'p-4 flex items-start gap-3 ' +
+          (clearance === 'CLEARED'
+            ? 'border-emerald-200 bg-emerald-50/60'
+            : 'border-rose-200 bg-rose-50/60')
+        }>
+          {clearance === 'CLEARED'
+            ? <ShieldCheck className="h-5 w-5 text-emerald-700 mt-0.5" />
+            : <ShieldAlert className="h-5 w-5 text-rose-700 mt-0.5" />}
+          <div className="flex-1 text-sm">
+            <div className={'font-medium ' + (clearance === 'CLEARED' ? 'text-emerald-900' : 'text-rose-900')}>
+              Clearance: {clearance === 'CLEARED' ? 'Cleared' : 'Not cleared'}
+            </div>
+            {clearanceRemark ? (
+              <p className={'mt-0.5 whitespace-pre-wrap ' + (clearance === 'CLEARED' ? 'text-emerald-800/90' : 'text-rose-800/90')}>
+                {clearanceRemark}
+              </p>
+            ) : (
+              <p className={'mt-0.5 ' + (clearance === 'CLEARED' ? 'text-emerald-800/90' : 'text-rose-800/90')}>
+                {clearance === 'CLEARED'
+                  ? 'You have been cleared by an administrator.'
+                  : 'You have not yet been cleared by an administrator.'}
+              </p>
+            )}
           </div>
         </Card>
       )}

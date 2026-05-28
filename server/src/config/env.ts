@@ -21,6 +21,10 @@ const EnvSchema = z.object({
   BOOTSTRAP_ADMIN_EMAIL: z.string().trim().toLowerCase().email().optional(),
   BOOTSTRAP_ADMIN_PASSWORD: z.string().min(8).max(128).optional(),
   BOOTSTRAP_ADMIN_NAME: z.string().trim().min(1).max(100).optional(),
+  // Role-based default passwords used by admin user creation + CSV import when no password is supplied.
+  // The length minimum that applies to user-typed passwords does NOT apply to these.
+  DEFAULT_STUDENT_PASSWORD: z.string().min(1).max(128).default('Stud123'),
+  DEFAULT_FACULTY_PASSWORD: z.string().min(1).max(128).default('faculty123'),
   // Outbound email (Brevo SMTP). All optional; missing config disables sending.
   SMTP_HOST: z.string().min(1).default('smtp-relay.brevo.com'),
   SMTP_PORT: z.coerce.number().int().positive().default(587),

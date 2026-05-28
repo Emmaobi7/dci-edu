@@ -1,4 +1,4 @@
-import type { Role } from '@prisma/client';
+import type { Clearance, Role } from '@prisma/client';
 
 export const userDtoSelect = {
   id: true,
@@ -23,6 +23,9 @@ export const userDtoSelect = {
   practiceLicenseOriginalName: true,
   passportPhotoStoredName: true,
   passportPhotoOriginalName: true,
+  clearance: true,
+  clearanceRemark: true,
+  clearanceUpdatedAt: true,
 } as const;
 
 export interface UserRecord {
@@ -48,6 +51,9 @@ export interface UserRecord {
   practiceLicenseOriginalName: string | null;
   passportPhotoStoredName: string | null;
   passportPhotoOriginalName: string | null;
+  clearance: Clearance;
+  clearanceRemark: string | null;
+  clearanceUpdatedAt: Date | null;
 }
 
 export interface StudentDocumentInfo {
@@ -78,6 +84,9 @@ export interface UserDto {
     practiceLicense: StudentDocumentInfo;
     passportPhoto: StudentDocumentInfo;
   };
+  clearance: Clearance;
+  clearanceRemark: string | null;
+  clearanceUpdatedAt: string | null;
 }
 
 function docInfo(userId: string, kind: string, storedName: string | null, originalName: string | null): StudentDocumentInfo {
@@ -111,5 +120,8 @@ export function toUserDto(u: UserRecord): UserDto {
       practiceLicense: docInfo(u.id, 'practice-license', u.practiceLicenseStoredName, u.practiceLicenseOriginalName),
       passportPhoto: docInfo(u.id, 'passport-photo', u.passportPhotoStoredName, u.passportPhotoOriginalName),
     },
+    clearance: u.clearance,
+    clearanceRemark: u.clearanceRemark,
+    clearanceUpdatedAt: u.clearanceUpdatedAt ? u.clearanceUpdatedAt.toISOString() : null,
   };
 }
