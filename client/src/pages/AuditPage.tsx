@@ -7,7 +7,9 @@ import {
   Library,
   Pause,
   Play,
+  ShieldCheck,
   Trash2,
+  Unlock,
   Upload,
   UserCog,
   UserPlus,
@@ -20,15 +22,17 @@ import { API_BASE_URL } from '@/lib/api';
 type ActionMeta = { label: string; short: string; icon: React.ComponentType<{ className?: string }>; tone: string };
 
 const ACTION_META: Record<AuditAction, ActionMeta> = {
-  USER_CREATED:        { label: 'User created',     short: 'Created',     icon: UserPlus,  tone: 'bg-emerald-500/15 text-emerald-700' },
-  USER_ROLE_CHANGED:   { label: 'Role changed',     short: 'Role',        icon: UserCog,   tone: 'bg-violet-500/15 text-violet-700' },
-  USER_PASSWORD_RESET: { label: 'Password reset',   short: 'Password',    icon: KeyRound,  tone: 'bg-sky-500/15 text-sky-700' },
-  USER_DISABLED:       { label: 'User suspended',   short: 'Suspended',   icon: Pause,     tone: 'bg-amber-500/15 text-amber-700' },
-  USER_ENABLED:        { label: 'User reactivated', short: 'Reactivated', icon: Play,      tone: 'bg-emerald-500/15 text-emerald-700' },
-  USER_IMPORTED:       { label: 'CSV import',       short: 'Import',      icon: Upload,    tone: 'bg-sky-500/15 text-sky-700' },
-  CLASSROOM_DELETED:   { label: 'Class deleted',    short: 'Class',       icon: Trash2,    tone: 'bg-rose-500/15 text-rose-700' },
-  RESOURCE_CREATED:    { label: 'Resource added',   short: 'Resource',    icon: Library,   tone: 'bg-emerald-500/15 text-emerald-700' },
-  RESOURCE_DELETED:    { label: 'Resource deleted', short: 'Resource',    icon: Library,   tone: 'bg-rose-500/15 text-rose-700' },
+  USER_CREATED:           { label: 'User created',     short: 'Created',     icon: UserPlus,    tone: 'bg-emerald-500/15 text-emerald-700' },
+  USER_ROLE_CHANGED:      { label: 'Role changed',     short: 'Role',        icon: UserCog,     tone: 'bg-violet-500/15 text-violet-700' },
+  USER_PASSWORD_RESET:    { label: 'Password reset',   short: 'Password',    icon: KeyRound,    tone: 'bg-sky-500/15 text-sky-700' },
+  USER_DISABLED:          { label: 'User suspended',   short: 'Suspended',   icon: Pause,       tone: 'bg-amber-500/15 text-amber-700' },
+  USER_ENABLED:           { label: 'User reactivated', short: 'Reactivated', icon: Play,        tone: 'bg-emerald-500/15 text-emerald-700' },
+  USER_IMPORTED:          { label: 'CSV import',       short: 'Import',      icon: Upload,      tone: 'bg-sky-500/15 text-sky-700' },
+  USER_CLEARANCE_UPDATED: { label: 'Clearance updated',short: 'Clearance',   icon: ShieldCheck, tone: 'bg-emerald-500/15 text-emerald-700' },
+  USER_PROFILE_REOPENED:  { label: 'Profile reopened', short: 'Reopened',    icon: Unlock,      tone: 'bg-amber-500/15 text-amber-700' },
+  CLASSROOM_DELETED:      { label: 'Class deleted',    short: 'Class',       icon: Trash2,      tone: 'bg-rose-500/15 text-rose-700' },
+  RESOURCE_CREATED:       { label: 'Resource added',   short: 'Resource',    icon: Library,     tone: 'bg-emerald-500/15 text-emerald-700' },
+  RESOURCE_DELETED:       { label: 'Resource deleted', short: 'Resource',    icon: Library,     tone: 'bg-rose-500/15 text-rose-700' },
 };
 
 const FALLBACK_META: ActionMeta = { label: 'Event', short: 'Event', icon: Activity, tone: 'bg-muted text-muted-foreground' };

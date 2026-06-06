@@ -11,6 +11,7 @@ import {
   getFacultyBio,
   importUsersCsv,
   listUsers,
+  reopenStudentProfile,
   resetUserPassword,
   updateUserClearance,
   updateUserRole,
@@ -28,6 +29,7 @@ router.patch('/:id/clearance', asyncHandler(updateUserClearance));
 router.post('/:id/password', asyncHandler(resetUserPassword));
 router.post('/:id/disable', asyncHandler(disableUser));
 router.post('/:id/enable', asyncHandler(enableUser));
+router.post('/:id/reopen-profile', asyncHandler(reopenStudentProfile));
 router.get('/:userId/avatar', asyncHandler(getUserAvatar));
 router.get('/:userId/bio', asyncHandler(getFacultyBio));
 router.get('/:userId/documents/:kind', asyncHandler(getStudentDocument));

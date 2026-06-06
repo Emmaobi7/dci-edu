@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { FileText } from 'lucide-react';
+import { FileText, Unlock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { resolveApiUrl } from '@/lib/api';
 import { roleLabel } from '@/lib/utils';
-import { updateUserClearance, type AdminUser } from '@/lib/users';
+import { reopenStudentProfile, updateUserClearance, type AdminUser } from '@/lib/users';
 import type { Clearance, StudentDocumentInfo } from '@/lib/types';
 
 interface Props {
@@ -60,6 +60,9 @@ export function AdminUserDetailsDialog({ user, onClose, onUpdated }: Props) {
                     ? `Submitted on ${new Date(user.profileSubmittedAt).toLocaleDateString()}`
                     : 'Not submitted'}
                 />
+                {user.profileSubmittedAt && (
+                  <ReopenProfileControl user={user} onUpdated={onUpdated} />
+                )}
               </Section>
               <DocumentsSection documents={user.documents} />
               <ClearanceSection user={user} onUpdated={onUpdated} />
@@ -150,6 +153,57 @@ function ClearanceSection({ user, onUpdated }: { user: AdminUser; onUpdated?: (u
         <Button size="sm" onClick={onSave} disabled={!dirty || saving}>
           {saving ? 'Saving…' : 'Save clearance'}
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function ReopenProfileControl({ user, onUpdated }: { user: AdminUser; onUpdated?: (u: AdminUser) => void }) {
+  const [confirming, setConfirming] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setConfirming(false);
+    setError(null);
+  }, [user.id]);
+
+  async function onConfirm() {
+    setSaving(true); setError(null);
+    try {
+      const updated = await reopenStudentProfile(user.id);
+      onUpdated?.(updated);
+      setConfirming(false);
+    } catch (err) {
+      if (axios.isAxiosError(err)) setError(err.response?.data?.error ?? 'Could not reopen profile');
+      else setError('Could not reopen profile');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="mt-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 flex flex-col gap-2">
+      <div className="text-xs text-amber-900">
+        Reopening will unlock the student's profile so they can edit their details and replace
+        documents. Their existing data is kept.
+      </div>
+      {error && <div className="text-xs text-destructive">{error}</div>}
+      <div className="flex justify-end gap-2">
+        {confirming ? (
+          <>
+            <Button size="sm" variant="ghost" onClick={() => setConfirming(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={onConfirm} disabled={saving}>
+              {saving ? 'Reopening…' : 'Confirm reopen'}
+            </Button>
+          </>
+        ) : (
+          <Button size="sm" variant="ghost" onClick={() => setConfirming(true)}>
+            <Unlock className="h-3.5 w-3.5 mr-1" /> Reopen profile
+          </Button>
+        )}
       </div>
     </div>
   );

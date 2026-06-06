@@ -74,6 +74,11 @@ export async function updateUserClearance(
   return data.user;
 }
 
+export async function reopenStudentProfile(id: string): Promise<AdminUser> {
+  const { data } = await api.post<{ user: AdminUser }>(`/users/${id}/reopen-profile`);
+  return data.user;
+}
+
 export async function getFacultyBio(userId: string): Promise<FacultyBio> {
   const { data } = await api.get<{ bio: FacultyBio }>(`/users/${userId}/bio`);
   return data.bio;

@@ -216,6 +216,42 @@ export async function updateUserClearance(req: Request, res: Response): Promise<
   res.json({ user: toAdminUserDto(updated) });
 }
 
+export async function reopenStudentProfile(req: Request, res: Response): Promise<void> {
+  const admin = requireAdmin(req);
+  const { id: targetId } = req.params as { id: string };
+  if (!targetId) throw new HttpError(400, 'User id is required');
+
+  const target = await prisma.user.findUnique({
+    where: { id: targetId },
+    select: { id: true, email: true, role: true, profileSubmittedAt: true },
+  });
+  if (!target) throw new HttpError(404, 'User not found');
+  if (target.role !== 'STUDENT') {
+    throw new HttpError(400, 'Only student profiles can be reopened');
+  }
+  if (!target.profileSubmittedAt) {
+    throw new HttpError(400, 'This profile has not been submitted yet');
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: targetId },
+    data: { profileSubmittedAt: null },
+    select: adminUserSelect,
+  });
+
+  await writeAudit({
+    action: 'USER_PROFILE_REOPENED',
+    actorId: admin.id,
+    targetUserId: targetId,
+    targetType: 'User',
+    targetId,
+    summary: `Reopened profile for ${target.email}`,
+    metadata: { previousSubmittedAt: target.profileSubmittedAt.toISOString() },
+  });
+
+  res.json({ user: toAdminUserDto(updated) });
+}
+
 export async function getFacultyBio(req: Request, res: Response): Promise<void> {
   if (!req.user) throw new HttpError(401, 'Not authenticated');
   const { userId } = req.params as { userId: string };
