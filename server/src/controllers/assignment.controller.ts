@@ -203,6 +203,10 @@ export async function getAssignment(req: Request, res: Response): Promise<void> 
         id: true, filename: true, mimetype: true, size: true,
         isLate: true, submittedAt: true, updatedAt: true,
         grade: true, feedback: true, gradedAt: true,
+        attachments: {
+          select: { id: true, filename: true, mimetype: true, size: true, createdAt: true },
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
     extra = { mySubmission: mine };
@@ -244,17 +248,29 @@ export async function deleteAssignment(req: Request, res: Response): Promise<voi
       id: true,
       classroom: { select: { teacherId: true } },
       attachments: { select: { storedName: true } },
-      submissions: { select: { storedName: true } },
+      submissions: {
+        select: {
+          storedName: true,
+          attachments: { select: { storedName: true } },
+        },
+      },
     },
   });
   if (!existing) throw new HttpError(404, 'Assignment not found');
   if (!isOwnerOrAdmin(user, existing.classroom.teacherId)) throw new HttpError(403, 'Forbidden');
 
   await prisma.assignment.delete({ where: { id } });
-  // Best-effort object cleanup after DB cascade
+  // Best-effort object cleanup after DB cascade. Submissions may have either
+  // a legacy single-file blob, multi-file attachments, or both during the
+  // migration window — clean up all of them.
+  const submissionBlobs: string[] = [];
+  for (const s of existing.submissions) {
+    if (s.storedName) submissionBlobs.push(s.storedName);
+    for (const a of s.attachments) submissionBlobs.push(a.storedName);
+  }
   await Promise.all([
-    ...existing.attachments.map((a) => removeStoredObject('attachments', a.storedName)),
-    ...existing.submissions.map((s) => removeStoredObject('submissions', s.storedName)),
+    ...existing.attachments.map((a) => removeStoredObject('attachments', a.storedName).catch(() => {})),
+    ...submissionBlobs.map((name) => removeStoredObject('submissions', name).catch(() => {})),
   ]);
   res.status(204).end();
 }

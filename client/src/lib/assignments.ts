@@ -77,10 +77,10 @@ export function attachmentDownloadUrl(attachmentId: string): string {
 
 export async function submitAssignment(
   assignmentId: string,
-  file: File,
+  files: File[],
 ): Promise<Submission> {
   const form = new FormData();
-  form.append('file', file);
+  for (const f of files) form.append('files', f);
   const { data } = await api.post<{ submission: Submission }>(
     `/assignments/${assignmentId}/submissions`,
     form,
@@ -109,4 +109,8 @@ export async function gradeSubmission(
 
 export function submissionDownloadUrl(submissionId: string): string {
   return `/api/assignments/submissions/${submissionId}/file`;
+}
+
+export function submissionAttachmentDownloadUrl(attachmentId: string): string {
+  return `/api/assignments/submission-attachments/${attachmentId}/file`;
 }

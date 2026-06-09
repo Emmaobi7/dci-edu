@@ -146,19 +146,24 @@ describe('submissions', () => {
 
     const sub1 = await student
       .post(`/api/assignments/${aId}/submissions`)
-      .attach('file', PDF_BYTES, { filename: 'first.pdf', contentType: 'application/pdf' });
+      .attach('files', PDF_BYTES, { filename: 'first.pdf', contentType: 'application/pdf' });
     expect(sub1.status).toBe(201);
-    expect(sub1.body.submission).toMatchObject({ filename: 'first.pdf', studentId: s.id, isLate: false });
+    expect(sub1.body.submission).toMatchObject({ studentId: s.id, isLate: false });
+    expect(sub1.body.submission.attachments).toHaveLength(1);
+    expect(sub1.body.submission.attachments[0].filename).toBe('first.pdf');
 
     const sub2 = await student
       .post(`/api/assignments/${aId}/submissions`)
-      .attach('file', DOCX_BYTES, {
+      .attach('files', DOCX_BYTES, {
         filename: 'second.docx',
         contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      });
+      })
+      .attach('files', PDF_BYTES, { filename: 'extra.pdf', contentType: 'application/pdf' });
     expect(sub2.status).toBe(201);
-    expect(sub2.body.submission.filename).toBe('second.docx');
     expect(sub2.body.submission.id).toBe(sub1.body.submission.id);
+    expect(sub2.body.submission.attachments).toHaveLength(2);
+    const names = sub2.body.submission.attachments.map((a: { filename: string }) => a.filename).sort();
+    expect(names).toEqual(['extra.pdf', 'second.docx']);
 
     const list = await teacher.get(`/api/assignments/${aId}/submissions`);
     expect(list.status).toBe(200);
@@ -174,7 +179,7 @@ describe('submissions', () => {
 
     const blocked = await student
       .post(`/api/assignments/${aId}/submissions`)
-      .attach('file', PDF_BYTES, { filename: 'late.pdf', contentType: 'application/pdf' });
+      .attach('files', PDF_BYTES, { filename: 'late.pdf', contentType: 'application/pdf' });
     expect(blocked.status).toBe(409);
 
     const mine = await student.get(`/api/assignments/${aId}/submissions/me`);
@@ -192,7 +197,7 @@ describe('submissions', () => {
 
     const sub = await student
       .post(`/api/assignments/${aId}/submissions`)
-      .attach('file', PDF_BYTES, { filename: 'late.pdf', contentType: 'application/pdf' });
+      .attach('files', PDF_BYTES, { filename: 'late.pdf', contentType: 'application/pdf' });
     expect(sub.status).toBe(201);
     expect(sub.body.submission.isLate).toBe(true);
   });
@@ -206,7 +211,7 @@ describe('submissions', () => {
 
     const tSubmit = await teacher
       .post(`/api/assignments/${aId}/submissions`)
-      .attach('file', PDF_BYTES, { filename: 'x.pdf', contentType: 'application/pdf' });
+      .attach('files', PDF_BYTES, { filename: 'x.pdf', contentType: 'application/pdf' });
     expect(tSubmit.status).toBe(403);
 
     const { agent: outsider } = await registerAgent(app, {
@@ -214,11 +219,11 @@ describe('submissions', () => {
     });
     const oSubmit = await outsider
       .post(`/api/assignments/${aId}/submissions`)
-      .attach('file', PDF_BYTES, { filename: 'x.pdf', contentType: 'application/pdf' });
+      .attach('files', PDF_BYTES, { filename: 'x.pdf', contentType: 'application/pdf' });
     expect(oSubmit.status).toBe(403);
   });
 
-  it('submission download: owner-student and teacher OK, other student 403', async () => {
+  it('submission attachment download: owner-student and teacher OK, other student 403', async () => {
     const { teacher, student, classroomId } = await makeClassroomWithStudent();
     const created = await teacher
       .post(`/api/classrooms/${classroomId}/assignments`)
@@ -226,12 +231,12 @@ describe('submissions', () => {
     const aId = created.body.assignment.id as string;
     const sub = await student
       .post(`/api/assignments/${aId}/submissions`)
-      .attach('file', PDF_BYTES, { filename: 'd.pdf', contentType: 'application/pdf' });
-    const subId = sub.body.submission.id as string;
+      .attach('files', PDF_BYTES, { filename: 'd.pdf', contentType: 'application/pdf' });
+    const attId = sub.body.submission.attachments[0].id as string;
 
-    const ownerDl = await student.get(`/api/assignments/submissions/${subId}/file`);
+    const ownerDl = await student.get(`/api/assignments/submission-attachments/${attId}/file`);
     expect(ownerDl.status).toBe(200);
-    const teacherDl = await teacher.get(`/api/assignments/submissions/${subId}/file`);
+    const teacherDl = await teacher.get(`/api/assignments/submission-attachments/${attId}/file`);
     expect(teacherDl.status).toBe(200);
 
     // Another student in the SAME classroom must not be able to download a peer's submission
@@ -243,7 +248,7 @@ describe('submissions', () => {
       (c: { id: string; code: string }) => c.id === classroomId,
     ).code as string;
     await peer.post('/api/enrolments').send({ code });
-    const peerDl = await peer.get(`/api/assignments/submissions/${subId}/file`);
+    const peerDl = await peer.get(`/api/assignments/submission-attachments/${attId}/file`);
     expect(peerDl.status).toBe(403);
   });
 });

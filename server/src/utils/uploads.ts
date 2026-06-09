@@ -10,9 +10,12 @@ const ALLOWED_MIMETYPES = new Set<string>([
   'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/octet-stream',
 ]);
 
-const ALLOWED_EXTENSIONS = new Set<string>(['.pdf', '.doc', '.docx']);
+const ALLOWED_EXTENSIONS = new Set<string>(['.pdf', '.doc', '.docx', '.zip']);
 
 const ALLOWED_IMAGE_MIMETYPES = new Set<string>([
   'image/jpeg',
@@ -62,8 +65,13 @@ function safeBaseName(original: string): string {
 
 function fileFilter(_req: Request, file: Express.Multer.File, cb: FileFilterCallback): void {
   const ext = path.extname(file.originalname).toLowerCase();
-  if (!ALLOWED_MIMETYPES.has(file.mimetype) || !ALLOWED_EXTENSIONS.has(ext)) {
-    cb(new HttpError(400, 'Only PDF, DOC, or DOCX files are allowed'));
+  // Browsers sometimes mislabel .zip as application/octet-stream; require either
+  // a recognised mimetype or the .zip extension paired with octet-stream.
+  const extOk = ALLOWED_EXTENSIONS.has(ext);
+  const mimeOk = ALLOWED_MIMETYPES.has(file.mimetype);
+  const octetZip = file.mimetype === 'application/octet-stream' && ext === '.zip';
+  if (!extOk || (!mimeOk && !octetZip)) {
+    cb(new HttpError(400, 'Only PDF, DOC, DOCX, or ZIP files are allowed'));
     return;
   }
   cb(null, true);
@@ -97,7 +105,7 @@ export const attachmentUpload = multer({
 
 export const submissionUpload = multer({
   storage: memoryStorage,
-  limits: { fileSize: env.MAX_UPLOAD_BYTES, files: 1 },
+  limits: { fileSize: env.MAX_UPLOAD_BYTES, files: 10 },
   fileFilter,
 });
 

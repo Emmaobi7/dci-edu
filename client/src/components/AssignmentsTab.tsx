@@ -202,10 +202,10 @@ function CreateAssignmentDialog({
           <Input id="a-due" type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="a-files">Instruction files (PDF, DOC, DOCX)</Label>
+          <Label htmlFor="a-files">Instruction files (PDF, DOC, DOCX, ZIP)</Label>
           <Input
             id="a-files" type="file" multiple
-            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            accept=".pdf,.doc,.docx,.zip,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/zip,application/x-zip-compressed"
             onChange={(e) => setFiles(e.target.files ? Array.from(e.target.files) : [])}
           />
           {files.length > 0 && (

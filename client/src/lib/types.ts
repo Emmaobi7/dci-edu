@@ -108,11 +108,22 @@ export interface AssignmentAttachment {
   createdAt: string;
 }
 
+export interface SubmissionAttachment {
+  id: string;
+  filename: string;
+  mimetype: string;
+  size: number;
+  createdAt: string;
+}
+
 export interface MySubmissionSummary {
   id: string;
-  filename?: string;
-  mimetype?: string;
-  size?: number;
+  // Legacy single-file fields, present only on rows created before multi-file
+  // submissions. New submissions populate `attachments` instead.
+  filename?: string | null;
+  mimetype?: string | null;
+  size?: number | null;
+  attachments: SubmissionAttachment[];
   isLate: boolean;
   submittedAt: string;
   updatedAt?: string;
@@ -166,9 +177,12 @@ export interface Submission {
   id: string;
   assignmentId: string;
   studentId: string;
-  filename: string;
-  mimetype: string;
-  size: number;
+  // Legacy single-file fields, present only on rows created before multi-file
+  // submissions. New submissions populate `attachments` instead.
+  filename: string | null;
+  mimetype: string | null;
+  size: number | null;
+  attachments: SubmissionAttachment[];
   isLate: boolean;
   grade: number | null;
   feedback: string | null;

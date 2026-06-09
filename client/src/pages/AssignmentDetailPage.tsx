@@ -14,10 +14,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/lib/auth-context';
 import {
   attachmentDownloadUrl, deleteAssignment, deleteAttachment, getAssignment,
-  listSubmissions, submitAssignment, submissionDownloadUrl, updateAssignment,
-  uploadAttachments,
+  listSubmissions, submitAssignment, submissionAttachmentDownloadUrl,
+  submissionDownloadUrl, updateAssignment, uploadAttachments,
 } from '@/lib/assignments';
-import type { AssignmentDetail, Submission } from '@/lib/types';
+import type { AssignmentDetail, Submission, SubmissionAttachment } from '@/lib/types';
 
 export function AssignmentDetailPage() {
   const { classId = '', id = '' } = useParams<{ classId: string; id: string }>();
@@ -163,7 +163,7 @@ function AttachmentsCard({
             <Upload className="h-3.5 w-3.5" /> Add
             <input
               type="file" multiple className="hidden"
-              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept=".pdf,.doc,.docx,.zip,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/zip,application/x-zip-compressed"
               onChange={onPickFiles} disabled={busy}
             />
           </label>
@@ -205,15 +205,15 @@ function StudentSubmissionCard({
 }: { assignment: AssignmentDetail; onSubmitted: () => void }) {
   const mine = assignment.mySubmission ?? null;
   const graded = !!mine?.gradedAt;
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!file) return;
+    if (files.length === 0) return;
     setBusy(true); setError(null);
-    try { await submitAssignment(assignment.id, file); setFile(null); onSubmitted(); }
+    try { await submitAssignment(assignment.id, files); setFiles([]); onSubmitted(); }
     catch (err) { setError(extractError(err) ?? 'Failed to upload'); }
     finally { setBusy(false); }
   }
@@ -223,16 +223,10 @@ function StudentSubmissionCard({
       <h3 className="font-semibold mb-2">Your submission</h3>
       {mine && (
         <div className="rounded-xl bg-white/70 backdrop-blur-md border border-foreground/10 p-3 mb-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <FileText className="h-4 w-4 shrink-0 text-brand" />
-              <span className="text-sm font-medium truncate">{mine.filename}</span>
-              {mine.size !== undefined && <span className="text-xs text-muted-foreground">{formatBytes(mine.size)}</span>}
-            </div>
-            <a href={submissionDownloadUrl(mine.id)} className="text-xs text-brand inline-flex items-center gap-1 hover:underline">
-              <Download className="h-3.5 w-3.5" /> Download
-            </a>
-          </div>
+          <SubmissionFileList
+            attachments={mine.attachments}
+            legacy={mine.filename ? { id: mine.id, filename: mine.filename, size: mine.size ?? null } : null}
+          />
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span>Submitted {new Date(mine.submittedAt).toLocaleString()}</span>
             {mine.isLate && <span className="rounded-full bg-amber-500/20 text-amber-800 px-2 py-0.5 font-medium">LATE</span>}
@@ -250,19 +244,71 @@ function StudentSubmissionCard({
         <p className="text-xs text-muted-foreground">This submission has been graded — it can no longer be replaced.</p>
       ) : (
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
-          <Label htmlFor="sub-file">{mine ? 'Replace submission' : 'Upload your file'} (PDF, DOC, DOCX)</Label>
+          <Label htmlFor="sub-file">{mine ? 'Replace submission' : 'Upload your files'} (PDF, DOC, DOCX, ZIP — up to 10)</Label>
           <Input
-            id="sub-file" type="file" required
-            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            id="sub-file" type="file" required multiple
+            accept=".pdf,.doc,.docx,.zip,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/zip,application/x-zip-compressed"
+            onChange={(e) => setFiles(e.target.files ? Array.from(e.target.files) : [])}
           />
+          {files.length > 0 && (
+            <p className="text-xs text-muted-foreground">{files.length} file{files.length === 1 ? '' : 's'} selected</p>
+          )}
           {error && <div className="text-sm text-destructive">{error}</div>}
           <div className="flex justify-end">
-            <Button type="submit" disabled={!file || busy}>{busy ? 'Uploading…' : mine ? 'Replace submission' : 'Submit'}</Button>
+            <Button type="submit" disabled={files.length === 0 || busy}>{busy ? 'Uploading…' : mine ? 'Replace submission' : 'Submit'}</Button>
           </div>
         </form>
       )}
     </Card>
+  );
+}
+
+function SubmissionFileList({
+  attachments, legacy,
+}: {
+  attachments: SubmissionAttachment[];
+  legacy: { id: string; filename: string; size: number | null } | null;
+}) {
+  if (attachments.length === 0 && legacy) {
+    return (
+      <a
+        href={submissionDownloadUrl(legacy.id)}
+        className="flex items-center justify-between gap-3 hover:text-brand"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <FileText className="h-4 w-4 shrink-0 text-brand" />
+          <span className="text-sm font-medium truncate">{legacy.filename}</span>
+          {legacy.size !== null && <span className="text-xs text-muted-foreground">{formatBytes(legacy.size)}</span>}
+        </div>
+        <span className="text-xs text-brand inline-flex items-center gap-1">
+          <Download className="h-3.5 w-3.5" /> Download
+        </span>
+      </a>
+    );
+  }
+  if (attachments.length === 0) {
+    return <p className="text-xs text-muted-foreground">No file attached.</p>;
+  }
+  return (
+    <ul className="flex flex-col gap-1.5">
+      {attachments.map((a) => (
+        <li key={a.id}>
+          <a
+            href={submissionAttachmentDownloadUrl(a.id)}
+            className="flex items-center justify-between gap-3 hover:text-brand"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <FileText className="h-4 w-4 shrink-0 text-brand" />
+              <span className="text-sm font-medium truncate">{a.filename}</span>
+              <span className="text-xs text-muted-foreground shrink-0">{formatBytes(a.size)}</span>
+            </div>
+            <span className="text-xs text-brand inline-flex items-center gap-1 shrink-0">
+              <Download className="h-3.5 w-3.5" /> Download
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -291,34 +337,60 @@ function TeacherSubmissionsCard({ assignmentId }: { assignmentId: string }) {
       )}
       {submissions && submissions.length > 0 && (
         <ul className="divide-y divide-foreground/10">
-          {submissions.map((s) => (
-            <li key={s.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="h-9 w-9 rounded-full bg-brand/15 text-brand grid place-items-center font-medium shrink-0">
-                  {s.student.name.slice(0, 1).toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">{s.student.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">{s.student.email}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    Submitted {new Date(s.submittedAt).toLocaleString()}
-                    {s.isLate && <span className="ml-2 rounded-full bg-amber-500/20 text-amber-800 px-2 py-0.5 font-medium">LATE</span>}
+          {submissions.map((s) => {
+            const hasAttachments = s.attachments.length > 0;
+            const hasLegacy = !hasAttachments && !!s.filename;
+            return (
+              <li key={s.id} className="flex flex-col gap-2 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-9 w-9 rounded-full bg-brand/15 text-brand grid place-items-center font-medium shrink-0">
+                      {s.student.name.slice(0, 1).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">{s.student.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">{s.student.email}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        Submitted {new Date(s.submittedAt).toLocaleString()}
+                        {s.isLate && <span className="ml-2 rounded-full bg-amber-500/20 text-amber-800 px-2 py-0.5 font-medium">LATE</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {s.gradedAt && s.grade !== null && (
+                      <span className="text-sm font-semibold text-brand">{s.grade}/100</span>
+                    )}
+                    <Button size="sm" variant="outline" onClick={() => setGradingId(s.id)}>
+                      {s.gradedAt ? 'Update grade' : 'Grade'}
+                    </Button>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {s.gradedAt && s.grade !== null && (
-                  <span className="text-sm font-semibold text-brand">{s.grade}/100</span>
-                )}
-                <a href={submissionDownloadUrl(s.id)} className="inline-flex items-center gap-1 text-xs text-brand hover:underline">
-                  <Download className="h-3.5 w-3.5" /> File
-                </a>
-                <Button size="sm" variant="outline" onClick={() => setGradingId(s.id)}>
-                  {s.gradedAt ? 'Update grade' : 'Grade'}
-                </Button>
-              </div>
-            </li>
-          ))}
+                <div className="flex flex-wrap gap-1.5 pl-12">
+                  {hasAttachments && s.attachments.map((a) => (
+                    <a
+                      key={a.id}
+                      href={submissionAttachmentDownloadUrl(a.id)}
+                      className="inline-flex items-center gap-1 text-xs text-brand hover:underline rounded-md bg-brand/10 px-2 py-1"
+                      title={`${a.filename} · ${formatBytes(a.size)}`}
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      <span className="max-w-[16rem] truncate">{a.filename}</span>
+                    </a>
+                  ))}
+                  {hasLegacy && (
+                    <a
+                      href={submissionDownloadUrl(s.id)}
+                      className="inline-flex items-center gap-1 text-xs text-brand hover:underline rounded-md bg-brand/10 px-2 py-1"
+                      title={s.filename ?? undefined}
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      <span className="max-w-[16rem] truncate">{s.filename}</span>
+                    </a>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
       <GradeDialog
