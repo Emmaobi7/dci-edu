@@ -56,12 +56,12 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="px-2 py-3">
         <div className="flex items-center gap-2">
           <img
-            src="/wapcp2-removebg-preview-Ci4PO0se.png"
-            alt="WAPCPharm"
-            className="h-9 w-9 rounded-xl object-cover shadow-glass-lg"
+            src="/dci-logo.png"
+            alt="DCIAFRICA"
+            className="h-9 w-9 rounded-xl object-contain shadow-glass-lg"
           />
           <div>
-            <div className="font-semibold leading-tight">WAPCPharm</div>
+            <div className="font-bold leading-tight bg-gradient-to-r from-[#fbbf24] to-[#00b9ae] bg-clip-text text-transparent">DCIAFRICA</div>
             <div className="text-xs text-muted-foreground">Classroom</div>
           </div>
         </div>
@@ -78,7 +78,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors',
                 isActive
                   ? 'bg-brand text-white shadow-glass-lg'
-                  : 'text-foreground/80 hover:bg-white/60 hover:backdrop-blur-md',
+                  : 'text-foreground/70 hover:bg-white/10 hover:text-foreground',
               )
             }
           >

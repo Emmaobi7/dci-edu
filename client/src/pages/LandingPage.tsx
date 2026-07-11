@@ -32,13 +32,13 @@ export function LandingPage() {
       <header className="px-4 sm:px-8 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
           <img
-            src="/wapcp2-removebg-preview-Ci4PO0se.png"
-            alt="WAPCPharm"
+            src="/dci-logo.png"
+            alt="DCIAFRICA"
             className="h-10 w-10 rounded-xl object-contain"
           />
           <div className="flex flex-col leading-tight">
-            <span className="font-semibold">WAPCPharm Classroom</span>
-            <span className="text-[11px] text-muted-foreground">West African Postgraduate College of Pharmacists</span>
+            <span className="font-bold bg-gradient-to-r from-[#fbbf24] to-[#00b9ae] bg-clip-text text-transparent">DCIAFRICA</span>
+            <span className="text-[11px] text-muted-foreground">Digital Campus Initiative Africa</span>
           </div>
         </Link>
         <nav className="flex items-center gap-2">
@@ -55,16 +55,16 @@ export function LandingPage() {
         <section className="max-w-5xl mx-auto pt-10 sm:pt-16 text-center">
           <div className="mx-auto mb-6 h-20 w-20 rounded-3xl bg-brand/15 grid place-items-center shadow-glass-lg">
             <img
-              src="/wapcp2-removebg-preview-Ci4PO0se.png"
-              alt="WAPCPharm"
+              src="/dci-logo.png"
+              alt="DCIAFRICA"
               className="h-14 w-14 object-contain"
             />
           </div>
           <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight text-balance">
-            The learning platform for postgraduate pharmacists in West Africa.
+            The learning platform powering Africa's digital campus future.
           </h1>
           <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            WAPCPharm Classroom brings classes, live sessions, assessments, and resources together so faculty
+            DCIAFRICA Classroom brings classes, live sessions, assessments, and resources together so faculty
             can teach and students can learn — all in one place.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -125,7 +125,7 @@ export function LandingPage() {
       </main>
 
       <footer className="px-4 sm:px-8 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} West African Postgraduate College of Pharmacists. WAPCPharm Classroom.
+        © {new Date().getFullYear()} Digital Campus Initiative Africa. DCIAFRICA Classroom.
       </footer>
     </div>
   );

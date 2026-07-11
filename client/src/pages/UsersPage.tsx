@@ -152,7 +152,7 @@ export function UsersPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
             <p className="text-sm text-muted-foreground">
-              Manage everyone in WAPCPharm Classroom. Only admins can promote faculty or other admins.
+              Manage everyone in DCIAFRICA Classroom. Only admins can promote faculty or other admins.
             </p>
           </div>
         </div>
@@ -405,6 +405,7 @@ function RowActionsMenu({
   user, disabled, selfActionsDisabled, onResetPassword, onToggleDisabled, onViewDetails,
 }: MenuProps) {
   const [open, setOpen] = useState(false);
+  const [openUp, setOpenUp] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -416,23 +417,34 @@ function RowActionsMenu({
     return () => window.removeEventListener('mousedown', onClick);
   }, [open]);
 
+  const toggle = () => {
+    if (!open) {
+      const rect = ref.current?.getBoundingClientRect();
+      if (rect) {
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setOpenUp(spaceBelow < 180);
+      }
+    }
+    setOpen((v) => !v);
+  };
+
   return (
     <div ref={ref} className="relative inline-block">
       <button
         type="button"
         disabled={disabled}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/70 bg-white/60 text-foreground hover:bg-white/90 disabled:opacity-40 transition-colors"
         aria-label="Row actions"
       >
         <MoreHorizontal className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute right-0 z-20 mt-1 min-w-[180px] rounded-xl border border-white/60 bg-white/95 backdrop-blur shadow-glass-lg p-1 text-sm">
+        <div className={`glass-strong absolute right-0 z-20 min-w-[180px] rounded-xl p-1 text-sm shadow-glass-lg ${openUp ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
           <button
             type="button"
             onClick={() => { setOpen(false); onViewDetails(); }}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-brand/10"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-white/10"
           >
             <Eye className="h-4 w-4" /> View details
           </button>
@@ -440,7 +452,7 @@ function RowActionsMenu({
             type="button"
             disabled={selfActionsDisabled}
             onClick={() => { setOpen(false); onResetPassword(); }}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-brand/10 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <KeyRound className="h-4 w-4" /> Reset password
           </button>
@@ -448,7 +460,7 @@ function RowActionsMenu({
             type="button"
             disabled={selfActionsDisabled}
             onClick={() => { setOpen(false); onToggleDisabled(); }}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-brand/10 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {user.disabledAt ? (
               <><Play className="h-4 w-4" /> Reactivate</>

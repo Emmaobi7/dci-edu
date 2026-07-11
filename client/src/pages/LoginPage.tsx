@@ -44,17 +44,17 @@ export function LoginPage() {
         <CardHeader>
           <div className="mb-2 flex items-center gap-2">
             <img
-              src="/wapcp2-removebg-preview-Ci4PO0se.png"
-              alt="WAPCPharm"
-              className="h-10 w-10 rounded-xl object-cover shadow-glass-lg"
+              src="/dci-logo.png"
+              alt="DCIAFRICA"
+              className="h-10 w-10 rounded-xl object-contain shadow-glass-lg"
             />
             <div className="flex flex-col leading-tight">
-              <span className="font-semibold text-lg">WAPCPharm Classroom</span>
-              <span className="text-[11px] text-muted-foreground">West African Postgraduate College of Pharmacists</span>
+              <span className="font-bold text-lg bg-gradient-to-r from-[#fbbf24] to-[#00b9ae] bg-clip-text text-transparent">DCIAFRICA</span>
+              <span className="text-[11px] text-muted-foreground">Digital Campus Initiative Africa</span>
             </div>
           </div>
           <CardTitle>Welcome back</CardTitle>
-          <CardDescription>Sign in to your WAPCPharm Classroom account.</CardDescription>
+          <CardDescription>Sign in to your DCIAFRICA Classroom account.</CardDescription>
         </CardHeader>
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">

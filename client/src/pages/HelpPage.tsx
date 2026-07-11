@@ -97,7 +97,7 @@ export function HelpPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Help &amp; Guide</h1>
           <p className="text-sm text-muted-foreground">
-            How to use WAPCPharm Classroom as a {roleLabel(role).toLowerCase() || 'user'}. Tap any topic to expand.
+            How to use DCIAFRICA Classroom as a {roleLabel(role).toLowerCase() || 'user'}. Tap any topic to expand.
           </p>
         </div>
       </div>

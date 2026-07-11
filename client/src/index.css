@@ -4,31 +4,33 @@
 
 @layer base {
   :root {
-    /* Brand primary #C66726 ~ hsl(22, 67%, 47%) */
-    --background: 30 40% 98%;
-    --foreground: 24 35% 12%;
+    /* DCI Brand Theme — navy + teal + gold */
+    --background: 228 70% 10%;
+    --foreground: 0 0% 96%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 24 35% 12%;
+    --card: 228 60% 14%;
+    --card-foreground: 0 0% 96%;
 
-    --primary: 22 67% 47%;
+    /* Primary → DCI Teal #00b9ae */
+    --primary: 177 100% 36%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 100%;
-    --secondary-foreground: 24 35% 12%;
+    --secondary: 228 55% 18%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 30 25% 94%;
-    --muted-foreground: 24 10% 40%;
+    --muted: 228 50% 20%;
+    --muted-foreground: 220 20% 65%;
 
-    --accent: 22 90% 95%;
-    --accent-foreground: 22 67% 30%;
+    /* Accent → DCI Gold #fbbf24 */
+    --accent: 43 96% 56%;
+    --accent-foreground: 228 70% 10%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 24 20% 88%;
-    --input: 24 20% 88%;
-    --ring: 22 67% 47%;
+    --border: 228 40% 22%;
+    --input: 228 40% 22%;
+    --ring: 177 100% 36%;
 
     --radius: 0.875rem;
   }
@@ -44,27 +46,63 @@
   body {
     @apply text-foreground antialiased;
     background:
-      radial-gradient(1200px 600px at 10% -10%, rgba(198, 103, 38, 0.22), transparent 60%),
-      radial-gradient(900px 500px at 110% 10%, rgba(255, 200, 150, 0.30), transparent 60%),
-      linear-gradient(180deg, #FFF7F0 0%, #FFFFFF 60%, #FFF1E5 100%);
+      radial-gradient(1200px 600px at 10% -10%, rgba(0, 185, 174, 0.08), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(251, 191, 36, 0.05), transparent 60%),
+      linear-gradient(180deg, #0c1e59 0%, #0a183f 60%, #071230 100%);
     background-attachment: fixed;
+  }
+
+  /* Override Tailwind light-theme opacity classes on our dark-navy theme to look like premium dark glass */
+  .bg-white\/60 {
+    background-color: rgba(12, 30, 89, 0.45) !important;
+  }
+  .bg-white\/50 {
+    background-color: rgba(12, 30, 89, 0.35) !important;
+  }
+  .bg-white\/70 {
+    background-color: rgba(12, 30, 89, 0.55) !important;
+  }
+  .bg-white\/80 {
+    background-color: rgba(12, 30, 89, 0.65) !important;
+  }
+  .bg-white\/40 {
+    background-color: rgba(12, 30, 89, 0.30) !important;
+  }
+  
+  .border-white\/60, .border-white\/70 {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .hover\:bg-white\/60:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+  }
+  .hover\:bg-white\/80:hover {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+  }
+  .hover\:bg-white\/90:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
   }
 }
 
 @layer components {
   .glass {
-    @apply bg-white/55 backdrop-blur-xl backdrop-saturate-150 border border-white/60 shadow-glass;
+    @apply backdrop-blur-xl backdrop-saturate-150 border shadow-glass;
+    background: rgba(12, 30, 89, 0.50);
+    border-color: rgba(255, 255, 255, 0.08);
   }
   .glass-strong {
-    @apply bg-white/75 backdrop-blur-2xl backdrop-saturate-150 border border-white/70 shadow-glass-lg;
+    @apply backdrop-blur-2xl backdrop-saturate-150 border shadow-glass-lg;
+    background: rgba(12, 30, 89, 0.70);
+    border-color: rgba(255, 255, 255, 0.12);
   }
   .glass-panel {
     @apply glass rounded-2xl;
   }
   .glass-input {
-    @apply bg-white/80 backdrop-blur-md border border-foreground/15 shadow-inner shadow-black/[0.02]
-           hover:border-foreground/25
-           focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30 focus-visible:bg-white
+    @apply backdrop-blur-md border border-foreground/15 shadow-inner shadow-black/[0.04]
+           hover:border-foreground/30
+           focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30
            transition-colors;
+    background: rgba(10, 24, 63, 0.60);
   }
 }

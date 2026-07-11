@@ -68,7 +68,7 @@ export function AnnouncementComments({
                   <div className="h-8 w-8 shrink-0 rounded-full bg-brand/15 text-brand grid place-items-center text-xs font-medium">
                     {c.author.name.slice(0, 1).toUpperCase()}
                   </div>
-                  <div className="flex-1 rounded-xl bg-white/60 backdrop-blur-md border border-white/60 px-3 py-2">
+                  <div className="flex-1 rounded-xl bg-[#fbbf24]/10 backdrop-blur-md border border-[#fbbf24]/20 px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
                       <div className="text-xs font-medium">{c.author.name}</div>
                       <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
