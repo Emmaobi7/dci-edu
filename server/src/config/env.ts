@@ -11,9 +11,9 @@ const EnvSchema = z.object({
   CLIENT_ORIGIN: z.string().url().default('http://localhost:5173'),
   COOKIE_SECURE: z
     .union([z.boolean(), z.enum(['true', 'false'])])
-    .default(false)
+    .default(process.env.NODE_ENV === 'production')
     .transform((v) => v === true || v === 'true'),
-  COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
+  COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default(process.env.NODE_ENV === 'production' ? 'none' : 'lax'),
   MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(10 * 1024 * 1024),
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),

@@ -22,7 +22,22 @@ export function createApp() {
 
   app.use(
     cors({
-      origin: env.CLIENT_ORIGIN,
+      origin: (origin, callback) => {
+        if (!origin) {
+          callback(null, true);
+          return;
+        }
+        const isAllowed =
+          origin === env.CLIENT_ORIGIN ||
+          origin.startsWith('http://localhost:') ||
+          origin.endsWith('.onrender.com');
+
+        if (isAllowed) {
+          callback(null, true);
+        } else {
+          callback(null, false);
+        }
+      },
       credentials: true,
     }),
   );
