@@ -38,7 +38,7 @@ export function LandingPage() {
           />
           <div className="flex flex-col leading-tight">
             <span className="font-bold bg-gradient-to-r from-[#fbbf24] to-[#00b9ae] bg-clip-text text-transparent">DCIAFRICA</span>
-            <span className="text-[11px] text-muted-foreground">Digital Campus Initiative Africa</span>
+            <span className="text-[11px] text-muted-foreground">Digital Connect Institute Africa</span>
           </div>
         </Link>
         <nav className="flex items-center gap-2">
@@ -125,7 +125,7 @@ export function LandingPage() {
       </main>
 
       <footer className="px-4 sm:px-8 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Digital Campus Initiative Africa. DCIAFRICA Classroom.
+        © {new Date().getFullYear()} Digital Connect Institute Africa. DCIAFRICA Classroom.
       </footer>
     </div>
   );

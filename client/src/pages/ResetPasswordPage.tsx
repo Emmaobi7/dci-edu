@@ -59,7 +59,7 @@ export function ResetPasswordPage() {
             />
             <div className="flex flex-col leading-tight">
               <span className="font-bold text-lg bg-gradient-to-r from-[#fbbf24] to-[#00b9ae] bg-clip-text text-transparent">DCIAFRICA</span>
-              <span className="text-[11px] text-muted-foreground">Digital Campus Initiative Africa</span>
+              <span className="text-[11px] text-muted-foreground">Digital Connect Institute Africa</span>
             </div>
           </div>
           <CardTitle>Choose a new password</CardTitle>
