@@ -68,24 +68,24 @@ export async function sendPasswordResetEmail(
 <body style="margin:0;padding:0;background:#f6f4f1;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1f1b16;">
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="padding:32px 16px;">
     <tr><td align="center">
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="max-width:560px;background:#ffffff;border-radius:16px;box-shadow:0 6px 24px rgba(198,103,38,0.08);overflow:hidden;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="max-width:560px;background:#ffffff;border-radius:16px;box-shadow:0 6px 24px rgba(0,185,174,0.08);overflow:hidden;">
         <tr><td style="padding:24px 28px;border-bottom:1px solid #f0e8df;">
-          <div style="font-size:18px;font-weight:600;color:#1f1b16;">WAPCPharm Classroom</div>
-          <div style="font-size:12px;color:#6b6359;">West African Postgraduate College of Pharmacists</div>
+          <div style="font-size:18px;font-weight:600;color:#1f1b16;">DCIAFRICA Classroom</div>
+          <div style="font-size:12px;color:#6b6359;">Digital Connect Institute Africa</div>
         </td></tr>
         <tr><td style="padding:28px;">
           <h1 style="margin:0 0 12px;font-size:22px;font-weight:600;color:#1f1b16;">Reset your password</h1>
-          <p style="margin:0 0 16px;font-size:14px;line-height:1.55;color:#3a342d;">Hi ${safeName}, we received a request to reset the password for your WAPCPharm Classroom account.</p>
+          <p style="margin:0 0 16px;font-size:14px;line-height:1.55;color:#3a342d;">Hi ${safeName}, we received a request to reset the password for your DCIAFRICA Classroom account.</p>
           <p style="margin:0 0 24px;font-size:14px;line-height:1.55;color:#3a342d;">Click the button below to choose a new password. This link expires in ${expiresInMinutes} minutes.</p>
           <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td>
-            <a href="${safeUrl}" style="display:inline-block;background:#C66726;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:10px;font-size:14px;">Reset password</a>
+            <a href="${safeUrl}" style="display:inline-block;background:#00b9ae;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:10px;font-size:14px;">Reset password</a>
           </td></tr></table>
           <p style="margin:24px 0 0;font-size:12px;line-height:1.5;color:#6b6359;">If the button doesn't work, copy and paste this link into your browser:</p>
-          <p style="margin:6px 0 0;font-size:12px;word-break:break-all;color:#3a342d;"><a href="${safeUrl}" style="color:#C66726;">${safeUrl}</a></p>
+          <p style="margin:6px 0 0;font-size:12px;word-break:break-all;color:#3a342d;"><a href="${safeUrl}" style="color:#00b9ae;">${safeUrl}</a></p>
           <p style="margin:24px 0 0;font-size:12px;line-height:1.5;color:#6b6359;">If you did not request a password reset, you can safely ignore this email — your password will not change.</p>
         </td></tr>
         <tr><td style="padding:18px 28px;background:#faf6f1;font-size:11px;color:#6b6359;">
-          © ${new Date().getFullYear()} West African Postgraduate College of Pharmacists.
+          © ${new Date().getFullYear()} Digital Connect Institute Africa.
         </td></tr>
       </table>
     </td></tr>
@@ -95,15 +95,15 @@ export async function sendPasswordResetEmail(
   const text = [
     `Hi ${recipientName || 'there'},`,
     '',
-    'We received a request to reset the password for your WAPCPharm Classroom account.',
+    'We received a request to reset the password for your DCIAFRICA Classroom account.',
     `Open the link below to choose a new password (expires in ${expiresInMinutes} minutes):`,
     '',
     resetUrl,
     '',
     'If you did not request a password reset, you can ignore this email.',
     '',
-    '— WAPCPharm Classroom',
+    '— DCIAFRICA Classroom',
   ].join('\n');
 
-  return sendEmail({ to, subject: 'Reset your WAPCPharm Classroom password', html, text });
+  return sendEmail({ to, subject: 'Reset your DCIAFRICA Classroom password', html, text });
 }
